@@ -1,12 +1,18 @@
 import common
+from mongo import MongoDB
+import datetime
+
 class house_info():
-    def __init__(self, name, url, price, addr, timestamp, year = 0) -> None:
+    def __init__(self, name, obj_id, url, price, addr, timestamp, community = "TBD", year = 0) -> None:
         self.url = url
         self.year = year
         self.name = name
+        self.obj_id = obj_id
         self.price = price
         self.addr = addr
-        self.date_time_str = timestamp
+        self.community = community
+        self.now_timestamp = timestamp
+        self.date_time_str = self.now_timestamp.strftime("%Y-%m-%d-%H")
 
     def house_info_to_json_data(self):
         price_history = {"date":self.date_time_str, "price":self.price}
@@ -37,11 +43,18 @@ class house_info():
     def get_screenshot(self):
         pass
 
+ 
 # Abstract class for house agent webcrawler
 # will be used in future
 class house_agent_web():
     def __init__(self, webdriver, url, region) -> None:
-        pass
+        self.init_time_stamp()
+        self.webdriver = webdriver
+        self.url = url
+        self.region = region
+        self.house_obj_list = []
+        self.new_house_obj_list = []
+        self.db = MongoDB("mongodb://localhost:27017/", "house", "house_hist")
 
     def get_house_list(self):
         pass
@@ -54,3 +67,21 @@ class house_agent_web():
 
     def screen_shot_house_and_save_house_info(self):
         pass
+
+    def init_time_stamp(self):
+        self.now = datetime.datetime.now()
+        self.date_time_str = self.now.strftime("%Y-%m-%d-%H")
+
+    def save_house_to_mongodb(self):
+        date = datetime.datetime(self.now.year, self.now.month,
+                                    self.now.day, self.now.hour)
+
+        for house in self.house_obj_list:
+            data = {"house_name": house.name, "house_obj_id":house.obj_id, "price":house.price,
+                    "addr":house.addr, "url":house.url, "community":house.community, "date":date}
+            if not self.db.check_exist({"date": {"$eq": date}, "house_obj_id":house.obj_id}):
+                self.db.insert_data(data)
+
+    def check_new_house(self, house_obj_id):
+        filter = {"house_obj_id":house_obj_id}
+        return not self.db.check_exist(filter)

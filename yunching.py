@@ -6,19 +6,15 @@ import time
 from pathlib import Path
 from house import house_info
 from house import house_agent_web
+import re
 
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.ui import WebDriverWait
 
 class yun_ching_web(house_agent_web):
     def __init__(self, webdriver, url, region = "永和") -> None:
-        self.webdriver = webdriver
-        self.url = url
-        self.region = region
-        self.house_obj_list = []
-        self.agent_name = "YunChing"        
-        now = datetime.datetime.now()
-        self.date_time_str = now.strftime("%Y-%m-%d-%H")
+        super().__init__(webdriver, url, region)
+        self.agent_name = "YunChing"
 
     def get_house_list(self):
         self.webdriver.get(self.url)        
@@ -58,20 +54,25 @@ class yun_ching_web(house_agent_web):
                 house = self.webdriver.find_element(By.XPATH, "/html/body/main/div[2]/ul/li[{}]".format(i))
                 # get price
                 price_ojb = house.find_elements(By.CLASS_NAME, "price")
-                house_price = price_ojb[0].text.replace(",","")
 
-                house_info_obj = house.find_element(By.TAG_NAME, "a")
-                house_name  = house_info_obj.accessible_name.split(' ')[0]
-                house_addr  = house_info_obj.accessible_name.split(' ')[1]
+                # get the real price from "4,688 萬" like string
+                house_price = re.findall("\d+", price_ojb[0].text.replace(",", ""))
+                house_price = int(house_price[0])
 
-                obj_url = house_info_obj.get_attribute('href')
-                #print(obj_url)
-                self.house_obj_list.append(house_info(house_name, obj_url, house_price, house_addr, self.date_time_str))
+                house_info_web_obj = house.find_element(By.TAG_NAME, "a")
+                house_name  = house_info_web_obj.accessible_name.split(' ')[0]
+                house_addr  = house_info_web_obj.accessible_name.split(' ')[1]
+
+                obj_url = house_info_web_obj.get_attribute('href')
+                obj_number = obj_url.split("/")[-1]
+
+                house_obj = house_info(house_name, obj_number, obj_url, house_price, house_addr, self.now)
+                self.house_obj_list.append(house_obj)
+                if self.check_new_house(obj_number):
+                    self.new_house_obj_list.append(house_obj)
             except Exception as e:
                 print("While capturing {}th house", i)
                 print("Exception happen {}", str(e))
-
-
 
     def screen_shot_house_and_save_house_info(self):
         for house_info_obj in self.house_obj_list:

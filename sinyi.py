@@ -8,16 +8,12 @@ from house import house_agent_web
 from house import house_info
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.ui import WebDriverWait
+import re
 
 class sinyi_web(house_agent_web):
     def __init__(self, webdriver, url, region = "永和") -> None:
-        self.webdriver = webdriver
-        self.url = url
-        self.region = region
-        self.house_obj_list = []
+        super().__init__(webdriver, url, region)
         self.agent_name = "Sinyi"
-        now = datetime.datetime.now()
-        self.date_time_str = now.strftime("%Y-%m-%d-%H")
 
     def get_house_list(self):
         self.webdriver.get(self.url)
@@ -47,15 +43,20 @@ class sinyi_web(house_agent_web):
                 #'3,288萬\n(含車位價)\n加入最愛'
                 house_price = price_obj.text.split("\n")[0]
                 house_price = house_price.replace(",","").replace("萬","")
+                house_price = re.findall("\d+", house_price)
+                house_price = int(house_price[0])
 
-                house_info_obj = house.find_element(By.CLASS_NAME, "LongInfoCard_Type_Name")
-                house_name  = house_info_obj.text
-                house_info_obj = house.find_element(By.CLASS_NAME, "LongInfoCard_Type_Address")
-                house_addr  = house_info_obj.text
+                house_info_web_obj = house.find_element(By.CLASS_NAME, "LongInfoCard_Type_Name")
+                house_name  = house_info_web_obj.text
+                house_info_web_obj = house.find_element(By.CLASS_NAME, "LongInfoCard_Type_Address")
+                house_addr  = house_info_web_obj.text
 
-                #print(obj_url)
-                self.house_obj_list.append(house_info(house_name, obj_url, house_price, house_addr, self.date_time_str))
-                print(house_name, obj_url, house_price, house_addr)
+                obj_number = obj_url.split("/")[-2]
+                house_obj = house_info(house_name, obj_number, obj_url, house_price, house_addr, self.now)
+                self.house_obj_list.append(house_obj)
+
+                if self.check_new_house(obj_number):
+                    self.new_house_obj_list.append(house_obj)                
                 cnt += 1
             except Exception as e:
                 print("While capturing {}th house", cnt)
