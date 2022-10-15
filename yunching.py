@@ -16,14 +16,27 @@ class yun_ching_web(house_agent_web):
         super().__init__(webdriver, url, region)
         self.agent_name = "YunChing"
 
-    def get_house_list(self):
+
+    def get_num_pages(self):
         self.webdriver.get(self.url)        
-        WebDriverWait(self.webdriver, 30).until(EC.presence_of_element_located((By.CLASS_NAME, "m-list-item")))
+        WebDriverWait(self.webdriver, 30).until(EC.presence_of_element_located((By.PARTIAL_LINK_TEXT, "下一頁")))
+        pages_web_obj = self.webdriver.find_elements(By.XPATH, '/html/body/main/div[2]/div[4]/ul/li')
+        for p in pages_web_obj:
+            # except 第一頁, 最末頁, the real page number string should be '1', '2'
+            if len(p.text) == 1:
+                self.num_pages += 1
+        return self.num_pages
 
-        self.house_list = self.webdriver.find_elements(By.XPATH, "/html/body/main/div[2]/ul")
-        self.num_house = len(self.house_list[0].find_elements(By.CLASS_NAME, "m-list-item"))
+    def get_house_list(self):
+        num_pages = self.get_num_pages()
+        for p in range(1, num_pages + 1):
+            self.webdriver.get(self.url + "?pg={}".format(p))
+            WebDriverWait(self.webdriver, 30).until(EC.presence_of_element_located((By.CLASS_NAME, "m-list-item")))
 
-        print("{} houses found ".format(self.num_house))
+            self.house_list = self.webdriver.find_elements(By.XPATH, "/html/body/main/div[2]/ul")
+            self.num_house = len(self.house_list[0].find_elements(By.CLASS_NAME, "m-list-item"))
+            print("{} houses found ".format(self.num_house))
+            self.create_host_list()
 
     # this function is used to screen shot house info from the house list 
     # the house list example can be found from below website
@@ -49,7 +62,9 @@ class yun_ching_web(house_agent_web):
     # the house list is like below
     # https://buy.yungching.com.tw/region/%E6%96%B0%E5%8C%97%E5%B8%82-%E6%B0%B8%E5%92%8C%E5%8D%80_c/3000-4900_price/
     def create_host_list(self):
-        for i in range(1, self.num_house):
+        retry = 0
+        i = 1
+        while i <= self.num_house:
             try:
                 house = self.webdriver.find_element(By.XPATH, "/html/body/main/div[2]/ul/li[{}]".format(i))
                 # get price
@@ -70,27 +85,53 @@ class yun_ching_web(house_agent_web):
                 self.house_obj_list.append(house_obj)
                 if self.check_new_house(obj_number):
                     self.new_house_obj_list.append(house_obj)
+                i+=1
             except Exception as e:
                 print("While capturing {}th house", i)
                 print("Exception happen {}", str(e))
+                print("take a rest for 5 mins since we migh blocked by the server now, retry = {}".format(retry))
+
+                time.sleep(300)
+                if retry < 3:
+                    retry += 1
+                    continue
+                print("Give up retry")
+            retry = 0
 
     def screen_shot_house_and_save_house_info(self):
-        for house_info_obj in self.house_obj_list:
+        house_no = 0
+        retry = 0
+        while house_no < len(self.house_obj_list):
+            house_info_obj = self.house_obj_list[house_no]
             try:
                 print(house_info_obj.name, house_info_obj.price, house_info_obj.url, house_info_obj.addr)
-                self.webdriver.get(house_info_obj.url)
-                obj_number = house_info_obj.url.split("/")[-1]
+                if self.house_info_exist_in_db(house_info_obj):
+                    print("{} is captured before at {}, skip".format(house_info_obj.name, self.date_time_str))
+                else:
+                    self.webdriver.get(house_info_obj.url)
+                    obj_number = house_info_obj.url.split("/")[-1]
 
-                house = self.webdriver.find_element(By.XPATH, "/html/body/main/section[1]")
+                    house = self.webdriver.find_element(By.XPATH, "/html/body/main/section[1]")
 
-                screen_shot_path = os.path.join("data", "yunching", self.region, obj_number)
-                Path(screen_shot_path).mkdir(parents=True, exist_ok=True)
+                    screen_shot_path = os.path.join("data", "yunching", self.region, obj_number)
+                    Path(screen_shot_path).mkdir(parents=True, exist_ok=True)
 
-                png_path = os.path.join(screen_shot_path, "{}_house.png".format(self.date_time_str))
-                json_path = os.path.join(screen_shot_path, "{}_house.json".format(obj_number))
-                house_info_obj.save_house_info_to_json_data(json_path)
-                house.screenshot(png_path)
-                time.sleep(2)        
+                    png_path = os.path.join(screen_shot_path, "{}_house.png".format(self.date_time_str))
+                    json_path = os.path.join(screen_shot_path, "{}_house.json".format(obj_number))
+                    house_info_obj.save_house_info_to_json_data(json_path)
+                    house.screenshot(png_path)
+                    time.sleep(3)
+
             except Exception as e:
                 print("While screenshot {}", house_info_obj.url)
                 print("Exception happen {}", str(e))
+                print("take a rest for 5 mins since we migh blocked by the server now, retry = {}".format(retry))
+                time.sleep(300)
+                if retry < 3:
+                    retry += 1
+                    continue
+                print("Give up retry")
+
+            print("{}/{} houses are captured".format(house_no, len(self.house_obj_list)))
+            retry = 0
+            house_no += 1

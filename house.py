@@ -54,6 +54,9 @@ class house_agent_web():
         self.region = region
         self.house_obj_list = []
         self.new_house_obj_list = []
+        self.num_house = 0
+        self.house_list = []
+        self.num_pages = 0
         self.db = MongoDB("mongodb://localhost:27017/", "house", "house_hist")
 
     def get_house_list(self):
@@ -71,6 +74,13 @@ class house_agent_web():
     def init_time_stamp(self):
         self.now = datetime.datetime.now()
         self.date_time_str = self.now.strftime("%Y-%m-%d-%H")
+
+    # This function will check if the given house info with timestamp ever captured
+    # The timestamp in database is hour basis
+    def house_info_exist_in_db(self, house_info_obj):
+        date = datetime.datetime(self.now.year, self.now.month,
+                                    self.now.day, self.now.hour)        
+        return self.db.check_exist({"date": {"$eq": date}, "house_obj_id":house_info_obj.obj_id})
 
     def save_house_to_mongodb(self):
         date = datetime.datetime(self.now.year, self.now.month,
