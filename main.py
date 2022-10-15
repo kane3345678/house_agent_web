@@ -56,5 +56,23 @@ def fetch_price():
 
     driver.quit()
 
+def show_price_cut():
+    from mongo import MongoDB
+    db = MongoDB("mongodb://localhost:27017/", "house", "house_hist")
+    house_obj_list = db.find_data_distinct("house_obj_id")
+    for i in house_obj_list:
+        house_data = db.find_data_order_by_date({"house_obj_id":i})
+        house_data = list(house_data)
+
+        # compare the first and last data to decide if price is changed
+        if house_data[-1]['price'] != house_data[0]['price']:
+            print("=" * 20)
+            print(house_data[0])
+            print(house_data[-1])
+            print("=" * 20)
+
 if args.func == "fetch_price":
     fetch_price()
+
+elif args.func == "show_price_cut":
+    show_price_cut()
