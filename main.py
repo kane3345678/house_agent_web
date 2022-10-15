@@ -6,6 +6,10 @@ from pathlib import Path
 from sinyi import sinyi_web
 from yunching import yun_ching_web
 import common
+from argparse import ArgumentParser
+parser = ArgumentParser()
+parser.add_argument("-f", "--function", help="Decide what function is run", dest="func", default="fetch_price")
+args = parser.parse_args()
 
 all_agents = [
         {
@@ -24,23 +28,27 @@ all_agents = [
         }
 ]
 
-configs = common.read_json("config.json")
-driver = webdriver.Chrome(executable_path=configs["chromedriver_path"])
-driver.maximize_window()
-for ag in all_agents:
-    agent_class = ag["agent"]
-    for website in ag["website"]:
-        ag_web = agent_class(driver, website["url"], website["region"])
-        print("Capturing data for {} from agent {}".format(website["region"], ag_web.agent_name))
-        ag_web.get_house_list()
-        ag_web.screen_shot_house_and_save_house_info()
-        ag_web.save_house_to_mongodb()
+def fetch_price():
+    configs = common.read_json("config.json")
+    driver = webdriver.Chrome(executable_path=configs["chromedriver_path"])
+    driver.maximize_window()
+    for ag in all_agents:
+        agent_class = ag["agent"]
+        for website in ag["website"]:
+            ag_web = agent_class(driver, website["url"], website["region"])
+            print("Capturing data for {} from agent {}".format(website["region"], ag_web.agent_name))
+            ag_web.get_house_list()
+            ag_web.screen_shot_house_and_save_house_info()
+            ag_web.save_house_to_mongodb()
 
-        print("New houses:")
-        for i in ag_web.new_house_obj_list:
-            print(i.url)
-        print()
-        print("sleep 300s in case you are blocked by target server")
-        time.sleep(1)
+            print("New houses:")
+            for i in ag_web.new_house_obj_list:
+                print(i.url)
+            print()
+            print("sleep 300s in case you are blocked by target server")
+            time.sleep(1)
 
-driver.quit()
+    driver.quit()
+
+if args.func == "fetch_price":
+    fetch_price()
