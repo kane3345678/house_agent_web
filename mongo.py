@@ -22,6 +22,11 @@ class MongoDB():
     def check_exist(self, mongo_scipt):
         return self.collection.count_documents(mongo_scipt) > 0
 
+    def find_data_distinct(self, mongo_scipt):
+        return self.collection.distinct(mongo_scipt)
+
+    def delete_one(self, mongo_scipt):
+        return self.collection.delete_one(mongo_scipt)
 '''
 
 
