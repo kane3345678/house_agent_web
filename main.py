@@ -106,7 +106,6 @@ def find_close_case():
             print(house_data[0])
             print("=" * 20)
 
-args.func = "fetch_price"
 if args.func == "fetch_price":
     fetch_price()
 
