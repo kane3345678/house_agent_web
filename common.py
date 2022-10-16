@@ -1,6 +1,12 @@
 import json
+from os import path
+import os
+from pathlib import Path
 
 def save_json(data, filename):
+    if not path.exists(os.path.dirname(filename)):
+        Path(os.path.dirname(filename)).mkdir(parents=True, exist_ok=True)
+
     with open(filename, 'w') as f:
         json.dump(data, f, indent=2)
 

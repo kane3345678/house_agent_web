@@ -7,6 +7,10 @@ from argparse import ArgumentParser
 import common as c
 from mongo import MongoDB
 import datetime
+import os
+import datetime
+
+date_str = datetime.datetime.now().strftime("%Y-%m-%d-%H")
 
 parser = ArgumentParser()
 parser.add_argument("-f", "--function", help="Decide what function is run", dest="func", default="fetch_price")
@@ -62,16 +66,25 @@ def show_price_cut():
             c.get_config("mongodb_dbname", "house"),
             c.get_config("mongodb_collection", "house_hist"))
     house_obj_list = db.find_data_distinct("house_obj_id")
+    all_data = {"full_data":[]}
+
     for i in house_obj_list:
         house_data = db.find_data_order_by_date({"house_obj_id":i})
         house_data = list(house_data)
-
         # compare the first and last data to decide if price is changed
         if house_data[-1]['price'] != house_data[0]['price']:
+            all_data["full_data"].append(house_data[0])
             print("=" * 20)
             print(house_data[0])
             print(house_data[-1])
             print("=" * 20)
+            house_data[0]['prve_price'] = house_data[-1]['price']
+            house_data[0].pop("_id")
+            house_data[0]['date'] = str(house_data[0]['date'])
+            all_data["full_data"].append(house_data[0])
+
+    if len(all_data["full_data"]):
+        c.save_json(all_data, os.path.join("sales_history","price_cut_" + date_str + ".json"))
 
 def show_new_house():
     db = MongoDB(c.get_config("mongodb", "mongodb://localhost:27017/"),
@@ -79,21 +92,29 @@ def show_new_house():
             c.get_config("mongodb_collection", "house_hist"))
 
     house_obj_list = db.find_data_distinct("house_obj_id")
+    all_data = {"full_data":[]}
+
     for i in house_obj_list:
         house_data = db.find_data({"house_obj_id":i})
         house_data = list(house_data)
 
-        # compare the first and last data to decide if price is changed
         if len(house_data) == 1:
             print("=" * 20)
             print(house_data[0])
             print("=" * 20)
+            house_data[0].pop("_id")
+            house_data[0]['date'] = str(house_data[0]['date'])
+            all_data["full_data"].append(house_data[0])
+
+    if len(all_data["full_data"]):
+        c.save_json(all_data, os.path.join("sales_history","new_house_" + date_str + ".json"))
 
 def find_close_case():
     db = MongoDB(c.get_config("mongodb", "mongodb://localhost:27017/"),
             c.get_config("mongodb_dbname", "house"),
             c.get_config("mongodb_collection", "house_hist"))
     house_obj_list = db.find_data_distinct("house_obj_id")
+    all_data = {"full_data":[]}
     for i in house_obj_list:
         house_data = db.find_data_order_by_date({"house_obj_id":i})
         house_data = list(house_data)
@@ -105,6 +126,12 @@ def find_close_case():
             print("=" * 20)
             print(house_data[0])
             print("=" * 20)
+            house_data[0].pop("_id")
+            house_data[0]['date'] = str(house_data[0]['date'])
+            all_data["full_data"].append(house_data[0])
+
+    if len(all_data["full_data"]):
+        c.save_json(all_data, os.path.join("sales_history","close_case_" + date_str + ".json"))
 
 if args.func == "fetch_price":
     fetch_price()
