@@ -4,6 +4,9 @@ from sinyi import sinyi_web
 from yunching import yun_ching_web
 import common
 from argparse import ArgumentParser
+import common as c
+from mongo import MongoDB
+import datetime
 
 parser = ArgumentParser()
 parser.add_argument("-f", "--function", help="Decide what function is run", dest="func", default="fetch_price")
@@ -16,7 +19,7 @@ all_agents = [
                 {"url":"https://buy.yungching.com.tw/region/%E6%96%B0%E5%8C%97%E5%B8%82-%E4%B8%AD%E5%92%8C%E5%8D%80_c/2000-4900_price/", "region":"中和"},
                 {"url":"https://buy.yungching.com.tw/region/%E6%96%B0%E5%8C%97%E5%B8%82-%E6%96%B0%E8%8E%8A%E5%8D%80_c/2000-4900_price/", "region":"新莊"},
                 {"url":"https://buy.yungching.com.tw/region/%E6%96%B0%E5%8C%97%E5%B8%82-%E6%9D%BF%E6%A9%8B%E5%8D%80_c/2000-4900_price/", "region":"板橋"}
-                
+
             ]
         },
         {
@@ -55,8 +58,9 @@ def fetch_price():
     driver.quit()
 
 def show_price_cut():
-    from mongo import MongoDB
-    db = MongoDB("mongodb://localhost:27017/", "house", "house_hist")
+    db = MongoDB(c.get_config("mongodb", "mongodb://localhost:27017/"),
+            c.get_config("mongodb_dbname", "house"),
+            c.get_config("mongodb_collection", "house_hist"))
     house_obj_list = db.find_data_distinct("house_obj_id")
     for i in house_obj_list:
         house_data = db.find_data_order_by_date({"house_obj_id":i})
@@ -69,8 +73,48 @@ def show_price_cut():
             print(house_data[-1])
             print("=" * 20)
 
+def show_new_house():
+    db = MongoDB(c.get_config("mongodb", "mongodb://localhost:27017/"),
+            c.get_config("mongodb_dbname", "house"),
+            c.get_config("mongodb_collection", "house_hist"))
+
+    house_obj_list = db.find_data_distinct("house_obj_id")
+    for i in house_obj_list:
+        house_data = db.find_data({"house_obj_id":i})
+        house_data = list(house_data)
+
+        # compare the first and last data to decide if price is changed
+        if len(house_data) == 1:
+            print("=" * 20)
+            print(house_data[0])
+            print("=" * 20)
+
+def find_close_case():
+    db = MongoDB(c.get_config("mongodb", "mongodb://localhost:27017/"),
+            c.get_config("mongodb_dbname", "house"),
+            c.get_config("mongodb_collection", "house_hist"))
+    house_obj_list = db.find_data_distinct("house_obj_id")
+    for i in house_obj_list:
+        house_data = db.find_data_order_by_date({"house_obj_id":i})
+        house_data = list(house_data)
+
+        latest_data_date = house_data[0]['date']
+        now = datetime.datetime.now()
+        diff = now - latest_data_date
+        if diff.days >= 1:
+            print("=" * 20)
+            print(house_data[0])
+            print("=" * 20)
+
+args.func = "fetch_price"
 if args.func == "fetch_price":
     fetch_price()
 
 elif args.func == "show_price_cut":
     show_price_cut()
+
+elif args.func == "show_new_house":
+    show_new_house()
+
+elif args.func == "find_close_case":
+    find_close_case()

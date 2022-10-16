@@ -1,3 +1,6 @@
 {
-    "chromedriver_path":"C:\\chromedriver\\chromedriver.exe"
+    "chromedriver_path":"C:\\chromedriver\\chromedriver.exe",
+    "mongodb":"mongodb://localhost:27017/",
+    "mongodb_dbname":"house",
+    "mongodb_collection":"house_hist"
 }

@@ -61,7 +61,9 @@ class house_agent_web():
         self.num_house = 0
         self.house_list = []
         self.num_pages = 0
-        self.db = MongoDB("mongodb://localhost:27017/", "house", "house_hist")
+        self.db = MongoDB(common.get_config("mongodb", "mongodb://localhost:27017/"),
+            common.get_config("mongodb_dbname", "house"),
+            common.get_config("mongodb_collection", "house_hist"))
 
     def get_house_list(self):
         pass

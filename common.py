@@ -10,4 +10,10 @@ def read_json( filename):
         return json.load(f)
     except Exception:
         return None
-  
+
+def get_config(config_name, default = None):
+    data = read_json("config.json")
+    if config_name in data:
+        return data[config_name]
+    else:
+        return default
