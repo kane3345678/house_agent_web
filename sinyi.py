@@ -19,7 +19,7 @@ class sinyi_web(house_agent_web):
         self.webdriver.get(self.url)
         WebDriverWait(self.webdriver, 30).until(EC.presence_of_element_located((By.CLASS_NAME, 'pageLinkClassName')))
         pages_web_obj = self.webdriver.find_elements(By.CLASS_NAME, 'pageLinkClassName')
-        self.num_pages = len(pages_web_obj)
+        self.num_pages = int(pages_web_obj[-1].text)
         print("page " + str(self.num_pages))
         return self.num_pages
 
