@@ -62,6 +62,9 @@ class sinyi_web(house_agent_web):
                 house_addr  = house_info_web_obj.text
 
                 obj_number = obj_url.split("/")[-2]
+                # WA to skip invalid house
+                if (obj_number == "house"):
+                    continue
                 house_obj = house_info(house_name, obj_number, obj_url, house_price, house_addr, self.now)
                 self.house_obj_list.append(house_obj)
 
@@ -72,28 +75,9 @@ class sinyi_web(house_agent_web):
                 print("While capturing {}th house", cnt)
                 print("Exception happen {}", str(e))
 
-    def screen_shot_house_and_save_house_info(self):
-        for house_info_obj in self.house_obj_list:
-            try:
-                print(house_info_obj.name, house_info_obj.price, house_info_obj.url, house_info_obj.addr)
-                if self.house_info_exist_in_db(house_info_obj):
-                    print("{} is captured before at {}, skip".format(house_info_obj.name, self.date_time_str))
-                else:
-                    self.webdriver.get(house_info_obj.url)
-                    # https://www.sinyi.com.tw/buy/house/20033T/?breadcrumb=list
-                    obj_number = house_info_obj.url.split("/")[-2]
 
-                    house = self.webdriver.find_element(By.XPATH, '//*[@id="__next"]/div/div/span/div[3]/div/div')
-
-                    screen_shot_path = os.path.join("data", "sinyi", self.region, obj_number)
-                    Path(screen_shot_path).mkdir(parents=True, exist_ok=True)
-
-                    png_path = os.path.join(screen_shot_path, "{}_house.png".format(self.date_time_str))
-                    json_path = os.path.join(screen_shot_path, "{}_house.json".format(obj_number))
-                    house_info_obj.save_house_info_to_json_data(json_path)
-                    house.screenshot(png_path)
-                    time.sleep(2)
-            except Exception as e:
-                print("While screenshot {}", house_info_obj.url)
-                print("Exception happen {}", str(e))
-
+    def get_web_obj_for_screen_shot(self, house_info_obj):
+        self.webdriver.get(house_info_obj.url)
+        WebDriverWait(self.webdriver, 30).until(EC.presence_of_element_located((By.XPATH, '//*[@id="__next"]/div/div/span/div[3]/div/div')))
+        house = self.webdriver.find_element(By.XPATH, '//*[@id="__next"]/div/div/span/div[3]/div/div')
+        return house

@@ -1,6 +1,10 @@
 import common
 from mongo import MongoDB
 import datetime
+from pathlib import Path
+from selenium.webdriver.common.by import By
+import os
+import time
 
 class house_info():
     def __init__(self, name, obj_id, url, price, addr, timestamp, community = "TBD", year = 0) -> None:
@@ -69,7 +73,47 @@ class house_agent_web():
         pass
 
     def screen_shot_house_and_save_house_info(self):
-        pass
+        house_no = 0
+        retry = 0
+        while house_no < len(self.house_obj_list):
+            house_info_obj = self.house_obj_list[house_no]
+            try:
+                print(house_info_obj.name, house_info_obj.price, house_info_obj.url, house_info_obj.addr)
+                last_hist_price = self.check_latest_price_from_mongodb(house_info_obj.obj_id)
+
+                if self.house_info_exist_in_db(house_info_obj):
+                    print("{} is captured before at {}, skip".format(house_info_obj.name, self.date_time_str))
+                elif last_hist_price == house_info_obj.price:
+                    print("obj_id {}, price unchanged {}, skip".format(house_info_obj.obj_id, house_info_obj.price))                    
+                else:
+                    print("obj_id {}, price changed; before: {}, after: {}".format(house_info_obj.obj_id, last_hist_price, house_info_obj.price))                    
+
+                    obj_number = house_info_obj.obj_id
+
+                    house = self.get_web_obj_for_screen_shot(house_info_obj)
+
+                    screen_shot_path = os.path.join("data", self.agent_name.lower(), self.region, obj_number)
+                    Path(screen_shot_path).mkdir(parents=True, exist_ok=True)
+
+                    png_path = os.path.join(screen_shot_path, "{}_house.png".format(self.date_time_str))
+                    json_path = os.path.join(screen_shot_path, "{}_house.json".format(obj_number))
+                    house_info_obj.save_house_info_to_json_data(json_path)
+                    house.screenshot(png_path)
+                    time.sleep(3)
+
+            except Exception as e:
+                print("While screenshot {}", house_info_obj.url)
+                print("Exception happen {}", str(e))
+                print("take a rest for 5 mins since we migh blocked by the server now, retry = {}".format(retry))
+                time.sleep(300)
+                if retry < 3:
+                    retry += 1
+                    continue
+                print("Give up retry")
+
+            print("{}/{} houses are captured".format(house_no, len(self.house_obj_list)))
+            retry = 0
+            house_no += 1
 
     def init_time_stamp(self):
         self.now = datetime.datetime.now()
@@ -79,7 +123,7 @@ class house_agent_web():
     # The timestamp in database is hour basis
     def house_info_exist_in_db(self, house_info_obj):
         date = datetime.datetime(self.now.year, self.now.month,
-                                    self.now.day, self.now.hour)        
+                                    self.now.day, self.now.hour)
         return self.db.check_exist({"date": {"$eq": date}, "house_obj_id":house_info_obj.obj_id})
 
     def save_house_to_mongodb(self):
@@ -91,6 +135,20 @@ class house_agent_web():
                     "addr":house.addr, "url":house.url, "community":house.community, "date":date}
             if not self.db.check_exist({"date": {"$eq": date}, "house_obj_id":house.obj_id}):
                 self.db.insert_data(data)
+
+    def check_latest_price_from_mongodb(self, obj_id):
+        data = list(self.db.find_data_order_by_date({"house_obj_id":obj_id}))
+        if len(data) == 0:
+            return None
+        else:
+            return int(data[0]['price'])
+
+    def check_price_changed(self, obj_id, price):
+        last_hist_price = self.check_latest_price_from_mongodb(obj_id)
+        if last_hist_price == None:
+            return False
+        else:
+            return last_hist_price != price
 
     def check_new_house(self, house_obj_id):
         filter = {"house_obj_id":house_obj_id}

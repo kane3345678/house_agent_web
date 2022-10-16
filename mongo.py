@@ -11,8 +11,11 @@ class MongoDB():
     def insert_data(self, data_in_json):
         self.collection.insert_one(data_in_json)
 
-    def find_data(self, mongo_scipt):
+    def find_data(self, mongo_scipt, order = pymongo.DESCENDING):
         return self.collection.find(mongo_scipt)
+
+    def find_data_order_by_date(self, mongo_scipt, order = pymongo.DESCENDING):
+        return self.collection.find(mongo_scipt).sort('date',pymongo.DESCENDING)
 
     def find_one(self, mongo_scipt):
         a = self.collection.count_documents(mongo_scipt)

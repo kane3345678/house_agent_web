@@ -98,40 +98,8 @@ class yun_ching_web(house_agent_web):
                 print("Give up retry")
             retry = 0
 
-    def screen_shot_house_and_save_house_info(self):
-        house_no = 0
-        retry = 0
-        while house_no < len(self.house_obj_list):
-            house_info_obj = self.house_obj_list[house_no]
-            try:
-                print(house_info_obj.name, house_info_obj.price, house_info_obj.url, house_info_obj.addr)
-                if self.house_info_exist_in_db(house_info_obj):
-                    print("{} is captured before at {}, skip".format(house_info_obj.name, self.date_time_str))
-                else:
-                    self.webdriver.get(house_info_obj.url)
-                    obj_number = house_info_obj.url.split("/")[-1]
-
-                    house = self.webdriver.find_element(By.XPATH, "/html/body/main/section[1]")
-
-                    screen_shot_path = os.path.join("data", "yunching", self.region, obj_number)
-                    Path(screen_shot_path).mkdir(parents=True, exist_ok=True)
-
-                    png_path = os.path.join(screen_shot_path, "{}_house.png".format(self.date_time_str))
-                    json_path = os.path.join(screen_shot_path, "{}_house.json".format(obj_number))
-                    house_info_obj.save_house_info_to_json_data(json_path)
-                    house.screenshot(png_path)
-                    time.sleep(3)
-
-            except Exception as e:
-                print("While screenshot {}", house_info_obj.url)
-                print("Exception happen {}", str(e))
-                print("take a rest for 5 mins since we migh blocked by the server now, retry = {}".format(retry))
-                time.sleep(300)
-                if retry < 3:
-                    retry += 1
-                    continue
-                print("Give up retry")
-
-            print("{}/{} houses are captured".format(house_no, len(self.house_obj_list)))
-            retry = 0
-            house_no += 1
+    def get_web_obj_for_screen_shot(self, house_info_obj):
+        self.webdriver.get(house_info_obj.url)
+        WebDriverWait(self.webdriver, 30).until(EC.presence_of_element_located((By.XPATH, "/html/body/main/section[1]")))
+        house = self.webdriver.find_element(By.XPATH, "/html/body/main/section[1]")
+        return house

@@ -1,8 +1,5 @@
 from selenium import webdriver
-from selenium.webdriver.common.by import By
-import datetime
 import time
-from pathlib import Path
 from sinyi import sinyi_web
 from yunching import yun_ching_web
 import common
@@ -33,6 +30,7 @@ all_agents = [
             ]
         }
 ]
+
 
 def fetch_price():
     configs = common.read_json("config.json")
