@@ -73,7 +73,6 @@ def show_price_cut():
         house_data = list(house_data)
         # compare the first and last data to decide if price is changed
         if house_data[-1]['price'] != house_data[0]['price']:
-            all_data["full_data"].append(house_data[0])
             print("=" * 20)
             print(house_data[0])
             print(house_data[-1])
@@ -99,12 +98,17 @@ def show_new_house():
         house_data = list(house_data)
 
         if len(house_data) == 1:
-            print("=" * 20)
-            print(house_data[0])
-            print("=" * 20)
-            house_data[0].pop("_id")
-            house_data[0]['date'] = str(house_data[0]['date'])
-            all_data["full_data"].append(house_data[0])
+            latest_data_date = house_data[0]['date']
+            now = datetime.datetime.now()
+            diff = now - latest_data_date
+            # new house data must be one day old only
+            if diff.days * 86400 + diff.seconds < 86400:
+                print("=" * 20)
+                print(house_data[0])
+                print("=" * 20)
+                house_data[0].pop("_id")
+                house_data[0]['date'] = str(house_data[0]['date'])
+                all_data["full_data"].append(house_data[0])
 
     if len(all_data["full_data"]):
         c.save_json(all_data, os.path.join("sales_history","new_house_" + date_str + ".json"))
