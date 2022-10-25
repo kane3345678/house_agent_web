@@ -122,20 +122,24 @@ class house_agent_web():
         self.date_time_str = self.now.strftime("%Y-%m-%d-%H")
 
     # This function will check if the given house info with timestamp ever captured
-    # The timestamp in database is hour basis
+
     def house_info_exist_in_db(self, house_info_obj):
         date = datetime.datetime(self.now.year, self.now.month,
                                     self.now.day, self.now.hour)
         return self.db.check_exist({"date": {"$eq": date}, "house_obj_id":house_info_obj.obj_id})
 
     def save_house_to_mongodb(self):
-        date = datetime.datetime(self.now.year, self.now.month,
+        # The timestamp in database is 8 hour basis
+        # ex: if we fetch data at 10PM, then the data fetched in 2PM is considered exist
+        db_data_date = datetime.datetime(self.now.year, self.now.month,
+                                    self.now.day, self.now.hour - 8)
+        new_data_date = datetime.datetime(self.now.year, self.now.month,
                                     self.now.day, self.now.hour)
 
         for house in self.house_obj_list:
             data = {"house_name": house.name, "house_obj_id":house.obj_id, "price":house.price,
-                    "addr":house.addr, "url":house.url, "community":house.community, "date":date}
-            if not self.db.check_exist({"date": {"$eq": date}, "house_obj_id":house.obj_id}):
+                    "addr":house.addr, "url":house.url, "community":house.community, "date":new_data_date}
+            if not self.db.check_exist({"date": {"$gte": db_data_date}, "house_obj_id":house.obj_id}):
                 self.db.insert_data(data)
 
     def check_latest_price_from_mongodb(self, obj_id):
@@ -153,5 +157,9 @@ class house_agent_web():
             return last_hist_price != price
 
     def check_new_house(self, house_obj_id):
+        filter = {"house_obj_id":house_obj_id}
+        return not self.db.check_exist(filter)
+
+    def is_house_close(self, house_obj_id):
         filter = {"house_obj_id":house_obj_id}
         return not self.db.check_exist(filter)
