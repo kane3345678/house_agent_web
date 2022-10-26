@@ -8,6 +8,8 @@ from house import house_agent_web
 from house import house_info
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.ui import WebDriverWait
+from selenium.common.exceptions import NoSuchElementException
+
 import re
 
 class sinyi_web(house_agent_web):
@@ -81,3 +83,14 @@ class sinyi_web(house_agent_web):
         WebDriverWait(self.webdriver, 30).until(EC.presence_of_element_located((By.XPATH, '//*[@id="__next"]/div/div/span/div[3]/div/div')))
         house = self.webdriver.find_element(By.XPATH, '//*[@id="__next"]/div/div/span/div[3]/div/div')
         return house
+
+    def check_house_obj_close(self, url):
+        self.webdriver.get(url)
+        try:
+            web_elem = self.webdriver.find_element(By.XPATH, '/html/body/div[1]/div/div/span/div[3]/div/div/div[2]')
+        except NoSuchElementException:
+            return False
+
+        if "找不到這一頁" in web_elem.text:
+            return True
+        return False

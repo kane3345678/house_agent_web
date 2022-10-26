@@ -10,6 +10,7 @@ import re
 
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.ui import WebDriverWait
+from selenium.common.exceptions import NoSuchElementException
 
 class yun_ching_web(house_agent_web):
     def __init__(self, webdriver, url, region = "永和") -> None:
@@ -103,3 +104,14 @@ class yun_ching_web(house_agent_web):
         WebDriverWait(self.webdriver, 30).until(EC.presence_of_element_located((By.XPATH, "/html/body/main/section[1]")))
         house = self.webdriver.find_element(By.XPATH, "/html/body/main/section[1]")
         return house
+
+    def check_house_obj_close(self, url):
+        self.webdriver.get(url)
+        try:
+            web_elem = self.webdriver.find_element(By.XPATH, "/html/body/main/div/div/p")
+        except NoSuchElementException:
+            return False
+
+        if "已經不存在" in web_elem.text:
+            return True
+        return False

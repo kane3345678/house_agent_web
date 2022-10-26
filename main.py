@@ -9,6 +9,7 @@ from mongo import MongoDB
 import datetime
 import os
 import datetime
+from tqdm import tqdm
 
 date_str = datetime.datetime.now().strftime("%Y-%m-%d-%H")
 
@@ -113,10 +114,22 @@ def show_new_house():
     if len(all_data["full_data"]):
         c.save_json(all_data, os.path.join("sales_history","new_house_" + date_str + ".json"))
 
+def check_house_close_on_website(driver, url):
+    yc_web = yun_ching_web(driver, "", "")
+    sinyi = sinyi_web(driver, "", "")
+    if "yungching" in url:
+        return yc_web.check_house_obj_close(url)
+    else:
+        return sinyi.check_house_obj_close(url)
+
 def find_close_case():
     db = MongoDB(c.get_config("mongodb", "mongodb://localhost:27017/"),
             c.get_config("mongodb_dbname", "house"),
             c.get_config("mongodb_collection", "house_hist"))
+    configs = common.read_json("config.json")
+    driver = webdriver.Chrome(executable_path=configs["chromedriver_path"])
+    driver.maximize_window()
+
     house_obj_list = db.find_data_distinct("house_obj_id")
     all_data = {"full_data":[]}
     for i in house_obj_list:
@@ -126,7 +139,7 @@ def find_close_case():
         latest_data_date = house_data[0]['date']
         now = datetime.datetime.now()
         diff = now - latest_data_date
-        if diff.days >= 1:
+        if diff.days >= 1 and check_house_close_on_website(driver, house_data[0]["url"]):
             print("=" * 20)
             print(house_data[0])
             print("=" * 20)
