@@ -132,21 +132,32 @@ def find_close_case():
 
     house_obj_list = db.find_data_distinct("house_obj_id")
     all_data = {"full_data":[]}
-    for i in house_obj_list:
+    for i in tqdm(house_obj_list):
         house_data = db.find_data_order_by_date({"house_obj_id":i})
         house_data = list(house_data)
 
         latest_data_date = house_data[0]['date']
         now = datetime.datetime.now()
         diff = now - latest_data_date
-        if diff.days >= 1 and check_house_close_on_website(driver, house_data[0]["url"]):
+        if diff.days <= 0:
+            # it means the house data is updated today
+            continue
+        elif db.check_exist({"close":'yes', "house_obj_id":i}):
+            # database indicates the house data is closed before
+            house_data[0].pop("_id")
+            all_data["full_data"].append(house_data[0])
+            continue
+        elif check_house_close_on_website(driver, house_data[0]["url"]):
+            # found house is not updated and not found on website
             print("=" * 20)
             print(house_data[0])
             print("=" * 20)
             house_data[0].pop("_id")
             house_data[0]['date'] = str(house_data[0]['date'])
+            house_data[0]['close'] = "yes"
             all_data["full_data"].append(house_data[0])
-
+            # save it to mongo db
+            db.insert_data(house_data[0])
     if len(all_data["full_data"]):
         c.save_json(all_data, os.path.join("sales_history","close_case_" + date_str + ".json"))
 
