@@ -39,6 +39,17 @@ all_agents = [
         }
 ]
 
+def init_browser():
+    configs = common.read_json("config.json")
+    driver = webdriver.Chrome(executable_path=configs["chromedriver_path"])
+    driver.maximize_window()
+    return driver
+
+def init_database():
+    db = MongoDB(c.get_config("mongodb", "mongodb://localhost:27017/"),
+            c.get_config("mongodb_dbname", "house"),
+            c.get_config("mongodb_collection", "house_hist"))
+    return db
 
 def fetch_price():
     configs = common.read_json("config.json")
@@ -63,9 +74,7 @@ def fetch_price():
     driver.quit()
 
 def show_price_cut():
-    db = MongoDB(c.get_config("mongodb", "mongodb://localhost:27017/"),
-            c.get_config("mongodb_dbname", "house"),
-            c.get_config("mongodb_collection", "house_hist"))
+    db = init_database()
     house_obj_list = db.find_data_distinct("house_obj_id")
     all_data = {"full_data":[]}
 
@@ -87,9 +96,7 @@ def show_price_cut():
         c.save_json(all_data, os.path.join("sales_history","price_cut_" + date_str + ".json"))
 
 def show_new_house():
-    db = MongoDB(c.get_config("mongodb", "mongodb://localhost:27017/"),
-            c.get_config("mongodb_dbname", "house"),
-            c.get_config("mongodb_collection", "house_hist"))
+    db = init_database()
 
     house_obj_list = db.find_data_distinct("house_obj_id")
     all_data = {"full_data":[]}
@@ -123,12 +130,8 @@ def check_house_close_on_website(driver, url):
         return sinyi.check_house_obj_close(url)
 
 def find_close_case():
-    db = MongoDB(c.get_config("mongodb", "mongodb://localhost:27017/"),
-            c.get_config("mongodb_dbname", "house"),
-            c.get_config("mongodb_collection", "house_hist"))
-    configs = common.read_json("config.json")
-    driver = webdriver.Chrome(executable_path=configs["chromedriver_path"])
-    driver.maximize_window()
+    db = init_database()
+    driver = init_browser()
 
     house_obj_list = db.find_data_distinct("house_obj_id")
     all_data = {"full_data":[]}
