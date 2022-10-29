@@ -87,13 +87,17 @@ def show_price_cut():
             print(house_data[0])
             print(house_data[-1])
             print("=" * 20)
-            house_data[0]['prve_price'] = house_data[-1]['price']
             house_data[0].pop("_id")
-            house_data[0]['date'] = str(house_data[0]['date'])
-            all_data["full_data"].append(house_data[0])
+
             # save it to mongo db
             house_data[0]["price_changed"] = "yes"
             db.insert_data(house_data[0])
+
+            house_data[0]['prve_price'] = house_data[-1]['price']
+            house_data[0]['date'] = str(house_data[0]['date'])
+            house_data[0].pop("_id")
+
+            all_data["full_data"].append(house_data[0])
 
     if len(all_data["full_data"]):
         c.save_json(all_data, os.path.join("sales_history","price_cut_" + date_str + ".json"))
@@ -169,6 +173,7 @@ def find_close_case():
     if len(all_data["full_data"]):
         c.save_json(all_data, os.path.join("sales_history","close_case_" + date_str + ".json"))
 
+args.func = "show_price_cut"
 if args.func == "fetch_price":
     fetch_price()
 
