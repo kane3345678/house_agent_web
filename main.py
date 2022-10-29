@@ -78,7 +78,7 @@ def show_price_cut():
     house_obj_list = db.find_data_distinct("house_obj_id")
     all_data = {"full_data":[]}
 
-    for i in house_obj_list:
+    for i in tqdm(house_obj_list):
         house_data = db.find_data_order_by_date({"house_obj_id":i})
         house_data = list(house_data)
         # compare the first and last data to decide if price is changed
@@ -104,7 +104,7 @@ def show_new_house():
     house_obj_list = db.find_data_distinct("house_obj_id")
     all_data = {"full_data":[]}
 
-    for i in house_obj_list:
+    for i in tqdm(house_obj_list):
         house_data = db.find_data({"house_obj_id":i})
         house_data = list(house_data)
 
