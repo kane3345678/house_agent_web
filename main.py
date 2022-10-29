@@ -91,6 +91,9 @@ def show_price_cut():
             house_data[0].pop("_id")
             house_data[0]['date'] = str(house_data[0]['date'])
             all_data["full_data"].append(house_data[0])
+            # save it to mongo db
+            house_data[0]["price_changed"] = "yes"
+            db.insert_data(house_data[0])
 
     if len(all_data["full_data"]):
         c.save_json(all_data, os.path.join("sales_history","price_cut_" + date_str + ".json"))
