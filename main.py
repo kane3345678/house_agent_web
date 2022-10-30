@@ -45,10 +45,15 @@ def init_browser():
     driver.maximize_window()
     return driver
 
-def init_database():
-    db = MongoDB(c.get_config("mongodb", "mongodb://localhost:27017/"),
-            c.get_config("mongodb_dbname", "house"),
-            c.get_config("mongodb_collection", "house_hist"))
+def init_database(db_name=None, collection=None):
+    if db_name == None:
+        print("Loading database assigned by config.json")
+        db = MongoDB(c.get_config("mongodb", "mongodb://localhost:27017/"),
+                c.get_config("mongodb_dbname", "house"),
+                c.get_config("mongodb_collection", "house_hist"))
+    else:
+        print("Loading database assigned {}, {}".format(db_name, collection))
+        db = MongoDB("mongodb://localhost:27017/", db_name, collection)
     return db
 
 def fetch_price():
