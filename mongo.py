@@ -11,6 +11,9 @@ class MongoDB():
     def insert_data(self, data_in_json):
         self.collection.insert_one(data_in_json)
 
+    def update_data(self, match, update):
+        self.collection.replace_one(match, update, upsert=True)
+
     def find_data(self, mongo_scipt, order = pymongo.DESCENDING):
         return self.collection.find(mongo_scipt)
 

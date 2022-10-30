@@ -10,8 +10,15 @@ import datetime
 import os
 import datetime
 from tqdm import tqdm
+from datetime import date
 
 date_str = datetime.datetime.now().strftime("%Y-%m-%d-%H")
+today = date.today()
+today_with_time = datetime.datetime(
+    year=today.year,
+    month=today.month,
+    day=today.day,
+)
 
 parser = ArgumentParser()
 parser.add_argument("-f", "--function", help="Decide what function is run", dest="func", default="fetch_price")
@@ -79,6 +86,7 @@ def fetch_price():
     driver.quit()
 
 def show_price_cut():
+    price_drop_db = init_database("house", "price_drop")
     db = init_database()
     house_obj_list = db.find_data_distinct("house_obj_id")
     all_data = {"full_data":[]}
@@ -86,23 +94,24 @@ def show_price_cut():
     for i in tqdm(house_obj_list):
         house_data = db.find_data_order_by_date({"house_obj_id":i})
         house_data = list(house_data)
+        latest_house_data = house_data[0]
+        first_house_data = house_data[-1]
         # compare the first and last data to decide if price is changed
-        if house_data[-1]['price'] != house_data[0]['price']:
+        if first_house_data['price'] != latest_house_data['price']:
             print("=" * 20)
-            print(house_data[0])
-            print(house_data[-1])
+            print(latest_house_data)
+            print(first_house_data)
             print("=" * 20)
-            house_data[0].pop("_id")
+            latest_house_data.pop("_id")
 
             # save it to mongo db
-            house_data[0]["price_changed"] = "yes"
-            db.insert_data(house_data[0])
+            latest_house_data["price_changed"] = "yes"
+            latest_house_data["date"] = today_with_time
+            price_drop_db.update_data({"house_obj_id":latest_house_data["house_obj_id"], "date":today_with_time}, latest_house_data)
+            latest_house_data['prve_price'] = house_data[-1]['price']
+            latest_house_data['date'] = str(latest_house_data['date'])
 
-            house_data[0]['prve_price'] = house_data[-1]['price']
-            house_data[0]['date'] = str(house_data[0]['date'])
-            house_data[0].pop("_id")
-
-            all_data["full_data"].append(house_data[0])
+            all_data["full_data"].append(latest_house_data)
 
     if len(all_data["full_data"]):
         c.save_json(all_data, os.path.join("sales_history","price_cut_" + date_str + ".json"))
