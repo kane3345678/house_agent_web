@@ -187,7 +187,6 @@ def find_close_case():
     if len(all_data["full_data"]):
         c.save_json(all_data, os.path.join("sales_history","close_case_" + date_str + ".json"))
 
-args.func = "show_price_cut"
 if args.func == "fetch_price":
     fetch_price()
 
