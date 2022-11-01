@@ -181,9 +181,10 @@ def find_close_case():
             print("=" * 20)
             print(house_data[0])
             print("=" * 20)
-            all_data_append(house_data)
             # save it to mongo db
+            house_data[0].pop("_id")
             db.insert_data(house_data[0])
+            all_data_append(house_data)
     if len(all_data["full_data"]):
         c.save_json(all_data, os.path.join("sales_history","close_case_" + date_str + ".json"))
 
@@ -198,3 +199,43 @@ elif args.func == "show_new_house":
 
 elif args.func == "find_close_case":
     find_close_case()
+
+elif args.func == "show_num_house_price_cut_by_region":
+    db = init_database("house", "price_drop")
+    data = db.find_data_distinct("house_obj_id")
+
+    all_region = {}
+    for i in tqdm(range(len(data))):
+        houseid = data[i]
+        house_info = db.find_data({"house_obj_id":houseid, "price_changed":"yes"})
+        for house in house_info:
+            addr = house["addr"]
+            region = addr[0:6]
+            # region is the first 6 unicode, ex: 新北市中和區
+            if region not in all_region:
+                all_region[region] = []
+            all_region[region].append(data[i])
+            break
+
+    for i in all_region:
+        print(i, len(all_region[i]))
+
+elif args.func == "show_num_house_by_region":
+    db = init_database()
+    data = db.find_data_distinct("house_obj_id")
+
+    all_region = {}
+    for i in tqdm(range(len(data))):
+        houseid = data[i]
+        house_info = db.find_data({"house_obj_id":houseid})
+        for house in house_info:
+            addr = house["addr"]
+            region = addr[0:6]
+            # region is the first 6 unicode, ex: 新北市中和區
+            if region not in all_region:
+                all_region[region] = []
+            all_region[region].append(data[i])
+            break
+
+    for i in all_region:
+        print(i, len(all_region[i]))
