@@ -22,6 +22,8 @@ today_with_time = datetime.datetime(
 
 parser = ArgumentParser()
 parser.add_argument("-f", "--function", help="Decide what function is run", dest="func", default="fetch_price")
+parser.add_argument("-j", "--json", help="json file", dest="js", default="")
+
 args = parser.parse_args()
 all_agents = [
         {
@@ -239,3 +241,10 @@ elif args.func == "show_num_house_by_region":
 
     for i in all_region:
         print(i, len(all_region[i]))
+
+elif args.func == "browse_new_house_in_json":
+    new_house = common.read_json(args.js)
+    driver = init_browser()
+    for house in new_house["full_data"]:
+        driver.get(house["url"])
+        time.sleep(5)
