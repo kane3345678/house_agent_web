@@ -11,6 +11,7 @@ import os
 import datetime
 from tqdm import tqdm
 from datetime import date
+import house_list
 
 date_str = datetime.datetime.now().strftime("%Y-%m-%d-%H")
 today = date.today()
@@ -25,28 +26,6 @@ parser.add_argument("-f", "--function", help="Decide what function is run", dest
 parser.add_argument("-j", "--json", help="json file", dest="js", default="")
 
 args = parser.parse_args()
-all_agents = [
-        {
-            "agent":yun_ching_web,
-            "website": [
-                {"url":"https://buy.yungching.com.tw/region/%E6%96%B0%E5%8C%97%E5%B8%82-%E6%B0%B8%E5%92%8C%E5%8D%80_c/2000-4900_price", "region":"永和"},
-                {"url":"https://buy.yungching.com.tw/region/%E6%96%B0%E5%8C%97%E5%B8%82-%E4%B8%AD%E5%92%8C%E5%8D%80_c/2000-4900_price/", "region":"中和"},
-                {"url":"https://buy.yungching.com.tw/region/%E6%96%B0%E5%8C%97%E5%B8%82-%E6%96%B0%E8%8E%8A%E5%8D%80_c/2000-4900_price/", "region":"新莊"},
-                {"url":"https://buy.yungching.com.tw/region/%E6%96%B0%E5%8C%97%E5%B8%82-%E6%9D%BF%E6%A9%8B%E5%8D%80_c/2000-4900_price/", "region":"板橋"}
-
-            ]
-        },
-        {
-            "agent":sinyi_web,
-            "website": [
-                {"url":"https://www.sinyi.com.tw/buy/list/2000-4500-price/NewTaipei-city/234-zip/Taipei-R-mrtline/03-mrt/default-desc/", "region":"永和"},
-                {"url":"https://www.sinyi.com.tw/buy/list/2000-4500-price/NewTaipei-city/242-zip/Taipei-R-mrtline/03-mrt/default-desc/", "region":"新莊"},
-                {"url":"https://www.sinyi.com.tw/buy/list/2000-4500-price/NewTaipei-city/235-zip/Taipei-R-mrtline/03-mrt/default-desc/", "region":"中和"},
-                {"url":"https://www.sinyi.com.tw/buy/list/2000-4500-price/NewTaipei-city/220-zip/Taipei-R-mrtline/03-mrt/default-desc/", "region":"板橋"}
-
-            ]
-        }
-]
 
 def init_browser():
     configs = common.read_json("config.json")
@@ -69,7 +48,7 @@ def fetch_price():
     configs = common.read_json("config.json")
     driver = webdriver.Chrome(executable_path=configs["chromedriver_path"])
     driver.maximize_window()
-    for ag in all_agents:
+    for ag in house_list.all_agents:
         agent_class = ag["agent"]
         for website in ag["website"]:
             ag_web = agent_class(driver, website["url"], website["region"])
