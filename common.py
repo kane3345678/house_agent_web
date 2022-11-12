@@ -23,3 +23,9 @@ def get_config(config_name, default = None):
         return data[config_name]
     else:
         return default
+
+def get_region_from_addr(addr):
+    try:
+        return addr[0:6]
+    except Exception:
+        return "Unknown"
