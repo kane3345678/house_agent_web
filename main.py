@@ -109,8 +109,9 @@ def show_price_cut():
             # save it to mongo db
             latest_house_data["price_changed"] = "yes"
             latest_house_data["date"] = today_with_time
-            price_drop_db.update_data({"house_obj_id":latest_house_data["house_obj_id"], "date":today_with_time}, latest_house_data)
             latest_house_data['prve_price'] = house_data[-1]['price']
+            price_drop_db.update_data({"house_obj_id":latest_house_data["house_obj_id"], "date":today_with_time},
+                                 latest_house_data)
             latest_house_data['date'] = str(latest_house_data['date'])
 
             all_data["full_data"].append(latest_house_data)
