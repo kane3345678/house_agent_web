@@ -101,6 +101,7 @@ def show_price_cut():
 
 def show_new_house():
     db = init_database()
+    new_house_db = init_database("house", "new_house")
 
     house_obj_list = db.find_data_distinct("house_obj_id")
     all_data = {"full_data":[]}
@@ -119,11 +120,10 @@ def show_new_house():
                 print(house_data[0])
                 print("=" * 20)
                 house_data[0].pop("_id")
-                house_data[0]['date'] = str(house_data[0]['date'])
+                house_data[0]['date'] = today_with_time
                 all_data["full_data"].append(house_data[0])
-
-    if len(all_data["full_data"]):
-        c.save_json(all_data, os.path.join("sales_history","new_house_" + date_str + ".json"))
+                new_house_db.update_data({"house_obj_id":house_data[0]["house_obj_id"], "date":today_with_time},
+                                 house_data[0])
 
 def check_house_close_on_website(driver, url):
     yc_web = yun_ching_web(driver, "", "")
