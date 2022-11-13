@@ -66,11 +66,11 @@ def fetch_price():
 
     driver.quit()
 
-def show_price_cut():
+def check_price_cut():
     price_drop_db = init_database("house", "price_drop")
     db = init_database()
     house_obj_list = db.find_data_distinct("house_obj_id")
-    all_data = {"full_data":[]}
+    all_data = {"full_data":{}}
 
     for i in tqdm(house_obj_list):
         house_data = db.find_data_order_by_date({"house_obj_id":i})
@@ -93,13 +93,14 @@ def show_price_cut():
             price_drop_db.update_data({"house_obj_id":latest_house_data["house_obj_id"], "date":today_with_time},
                                  latest_house_data)
             latest_house_data['date'] = str(latest_house_data['date'])
-
-            all_data["full_data"].append(latest_house_data)
+            if latest_house_data["region"] not in all_data["full_data"]:
+                all_data["full_data"][latest_house_data["region"]] = []
+            all_data["full_data"][latest_house_data["region"]].append(latest_house_data)
 
     if len(all_data["full_data"]):
         c.save_json(all_data, os.path.join("sales_history","price_cut_" + date_str + ".json"))
 
-def show_new_house():
+def check_new_house():
     db = init_database()
     new_house_db = init_database("house", "new_house")
 
@@ -174,34 +175,39 @@ def find_close_case():
 if args.func == "fetch_price":
     fetch_price()
 
-elif args.func == "show_price_cut":
-    show_price_cut()
+elif args.func == "check_price_cut":
+    check_price_cut()
 
-elif args.func == "show_new_house":
-    show_new_house()
+elif args.func == "check_new_house":
+    check_new_house()
 
 elif args.func == "find_close_case":
     find_close_case()
 
-elif args.func == "show_num_house_price_cut_by_region":
+elif args.func == "show_price_drop_hist":
     db = init_database("house", "price_drop")
-    data = db.find_data_distinct("house_obj_id")
+    start_date = datetime.datetime(2022, 10, 12)
+    end_date = datetime.datetime(2022, 12, 31)
+    delta = datetime.timedelta(days=1)
+    # iterate date from 10-12 to 12-31
+    while (start_date <= end_date):
+        mon = start_date.month
+        day = start_date.day
 
-    all_region = {}
-    for i in tqdm(range(len(data))):
-        houseid = data[i]
-        house_info = db.find_data({"house_obj_id":houseid, "price_changed":"yes"})
-        for house in house_info:
-            addr = house["addr"]
-            region = c.get_region_from_addr(addr)
-            # region is the first 6 unicode, ex: 新北市中和區
-            if region not in all_region:
-                all_region[region] = []
-            all_region[region].append(data[i])
-            break
-
-    for i in all_region:
-        print(i, len(all_region[i]))
+        query = {"date": {"$gte": start_date,"$lt": start_date + delta}}
+        data = list(db.find_data(query))
+        if len(data) != 0:
+            all_region = {}
+            print("*"*50)
+            print("date {}-{} = {}".format(mon, day, len(data)))
+            for house in data:
+                region = c.get_region_from_addr(house["addr"])
+                if region not in all_region:
+                    all_region[region] = []
+                all_region[region].append(data)
+            for i in all_region:
+                print(i, len(all_region[i]))
+        start_date += delta
 
 elif args.func == "show_num_house_by_region":
     db = init_database()
@@ -223,9 +229,11 @@ elif args.func == "show_num_house_by_region":
     for i in all_region:
         print(i, len(all_region[i]))
 
-elif args.func == "browse_new_house_in_json":
-    new_house = common.read_json(args.js)
+elif args.func == "browse_new_house":
+    new_house_db = init_database("house", "new_house")
+    new_house = new_house_db.find_data({"date":today_with_time})
     driver = init_browser()
-    for house in new_house["full_data"]:
+    for house in new_house:
         driver.get(house["url"])
         time.sleep(5)
+    driver.close()
