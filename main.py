@@ -88,6 +88,7 @@ def show_price_cut():
             # save it to mongo db
             latest_house_data["price_changed"] = "yes"
             latest_house_data["date"] = today_with_time
+            latest_house_data["region"] = c.get_region_from_addr(latest_house_data["addr"])
             latest_house_data['prve_price'] = house_data[-1]['price']
             price_drop_db.update_data({"house_obj_id":latest_house_data["house_obj_id"], "date":today_with_time},
                                  latest_house_data)
@@ -192,7 +193,7 @@ elif args.func == "show_num_house_price_cut_by_region":
         house_info = db.find_data({"house_obj_id":houseid, "price_changed":"yes"})
         for house in house_info:
             addr = house["addr"]
-            region = addr[0:6]
+            region = c.get_region_from_addr(addr)
             # region is the first 6 unicode, ex: 新北市中和區
             if region not in all_region:
                 all_region[region] = []
