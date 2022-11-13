@@ -2,6 +2,7 @@ import json
 from os import path
 import os
 from pathlib import Path
+import glob, os
 
 def save_json(data, filename):
     if not path.exists(os.path.dirname(filename)):
@@ -29,3 +30,17 @@ def get_region_from_addr(addr):
         return addr[0:6]
     except Exception:
         return "Unknown"
+
+def str_to_date(s):
+    import datetime
+    d = datetime.datetime.strptime(s, "%Y-%m-%d %H:%M:%S")
+    return d
+
+def find_files_in_dir(dir, file_pattern):
+    import re
+    file_list = []
+    for root, dirs, files in os.walk(dir):
+        for file in files:
+            if re.match(file_pattern, file) != None:
+                file_list.append(os.path.join(root, file))
+    return file_list
