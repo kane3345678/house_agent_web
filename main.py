@@ -231,11 +231,17 @@ elif args.func == "show_num_house_by_region":
 
 elif args.func == "browse_new_house":
     new_house_db = init_database("house", "new_house")
-    new_house = new_house_db.find_data({"date":today_with_time})
     driver = init_browser()
-    for house in new_house:
-        driver.get(house["url"])
-        time.sleep(5)
+    i = 0
+    query_date = today_with_time
+    while i < int(args.period):
+        new_house = new_house_db.find_data({"date":query_date})
+        print("browse new house in {}".format(str(query_date)))
+        for house in tqdm(new_house):
+            driver.get(house["url"])
+            time.sleep(5)
+        query_date = query_date - datetime.timedelta(days=1)
+        i += 1
     driver.close()
 
 elif args.func == "browse_new_discounted_house":
