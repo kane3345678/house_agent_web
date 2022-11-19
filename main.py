@@ -24,6 +24,7 @@ today_with_time = datetime.datetime(
 parser = ArgumentParser()
 parser.add_argument("-f", "--function", help="Decide what function is run", dest="func", default="fetch_price")
 parser.add_argument("-j", "--json", help="json file", dest="js", default="")
+parser.add_argument("-p", "--period", help="", dest="period", default=2)
 
 args = parser.parse_args()
 
@@ -171,7 +172,6 @@ def find_close_case():
             all_data_append(house_data)
     if len(all_data["full_data"]):
         c.save_json(all_data, os.path.join("sales_history","close_case_" + date_str + ".json"))
-
 if args.func == "fetch_price":
     fetch_price()
 
@@ -236,4 +236,36 @@ elif args.func == "browse_new_house":
     for house in new_house:
         driver.get(house["url"])
         time.sleep(5)
+    driver.close()
+
+elif args.func == "browse_new_discounted_house":
+    price_drop_db = init_database("house", "price_drop")
+    query_date_start = datetime.datetime(
+        year=today.year,
+        month=today.month,
+        day=today.day,
+    )
+
+    # iterate last 10 days until it can find discounted house
+    i = 10
+    while i > 0:
+        new_price_drop_house = price_drop_db.find_data({"date":query_date_start})
+        time.sleep(1)
+        discount_houses = list(new_price_drop_house)
+        if len(discount_houses) != 0:
+            print("found {} discounted house in {} ".format(len(discount_houses), str(query_date_start)))
+            break
+        print("No discounted house {}".format(str(query_date_start)))
+        delta = datetime.timedelta(days=1)
+        query_date_start -= delta
+        i-=1
+
+    driver = init_browser()
+    query_date_end = query_date_start - datetime.timedelta(days=int(args.period))
+    for house in tqdm(discount_houses):
+        old_hist = {"house_obj_id":house["house_obj_id"],"date":query_date_end}
+        house_drop_hist = price_drop_db.find_data(old_hist)
+        if len(list(house_drop_hist)) == 0:
+            driver.get(house["url"])
+            time.sleep(5)
     driver.close()
