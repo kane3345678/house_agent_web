@@ -174,6 +174,8 @@ def find_close_case():
         c.save_json(all_data, os.path.join("sales_history","close_case_" + date_str + ".json"))
 if args.func == "fetch_price":
     fetch_price()
+    check_price_cut()
+    check_new_house()
 
 elif args.func == "check_price_cut":
     check_price_cut()
