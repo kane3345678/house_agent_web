@@ -33,3 +33,6 @@ class MongoDB():
 
     def delete_one(self, mongo_scipt):
         return self.collection.delete_one(mongo_scipt)
+
+    def delete_many(self, mongo_scipt):
+        return self.collection.delete_many(mongo_scipt)
