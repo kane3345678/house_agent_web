@@ -5,7 +5,7 @@ from pathlib import Path
 from selenium.webdriver.common.by import By
 import os
 import time
-
+from bson.objectid import ObjectId
 class house_info():
     def __init__(self, name, obj_id, url, price, addr, timestamp, community = "TBD", year = 0) -> None:
         self.url = url
@@ -74,6 +74,11 @@ class house_agent_web():
     def create_host_list(self):
         pass
 
+    def delete_house_by_price_db(self, obj_id, price):
+        same_price_house = list(self.db.find_data({"house_obj_id":obj_id, "price":price}))
+        for i in range(len(same_price_house) - 1):
+            self.db.delete_one({"_id":ObjectId(same_price_house[i]["_id"])})
+
     def screen_shot_house_and_save_house_info(self):
         house_no = 0
         retry = 0
@@ -86,9 +91,11 @@ class house_agent_web():
                 if self.house_info_exist_in_db(house_info_obj):
                     print("{} is captured before at {}, skip".format(house_info_obj.name, self.date_time_str))
                 elif last_hist_price == house_info_obj.price:
-                    print("obj_id {}, price unchanged {}, skip".format(house_info_obj.obj_id, house_info_obj.price))                    
+                    print("obj_id {}, price unchanged {}, skip and kill same record".format(house_info_obj.obj_id, house_info_obj.price))
+                    # rm the same price in db
+                    self.delete_house_by_price_db(house_info_obj.obj_id, last_hist_price)
                 else:
-                    print("obj_id {}, price changed; before: {}, after: {}".format(house_info_obj.obj_id, last_hist_price, house_info_obj.price))                    
+                    print("obj_id {}, price changed; before: {}, after: {}".format(house_info_obj.obj_id, last_hist_price, house_info_obj.price))
 
                     obj_number = house_info_obj.obj_id
 
