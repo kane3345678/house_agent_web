@@ -19,13 +19,20 @@ class yun_ching_web(house_agent_web):
 
 
     def get_num_pages(self):
-        self.webdriver.get(self.url)        
-        WebDriverWait(self.webdriver, 30).until(EC.presence_of_element_located((By.PARTIAL_LINK_TEXT, "下一頁")))
-        pages_web_obj = self.webdriver.find_elements(By.XPATH, '/html/body/main/div[2]/div[4]/ul/li')
-        for p in pages_web_obj:
-            # except 第一頁, 最末頁, the real page number string should be '1', '2'
-            if len(p.text) == 1:
-                self.num_pages += 1
+        for retry in range(3):
+            try:
+                self.webdriver.get(self.url)
+                WebDriverWait(self.webdriver, 30).until(EC.presence_of_element_located((By.PARTIAL_LINK_TEXT, "下一頁")))
+                pages_web_obj = self.webdriver.find_elements(By.XPATH, '/html/body/main/div[2]/div[4]/ul/li')
+                for p in pages_web_obj:
+                    # except 第一頁, 最末頁, the real page number string should be '1', '2'
+                    if len(p.text) == 1:
+                        self.num_pages += 1
+                break
+            except Exception as e:
+                print(e)
+                print("Can't load the page successfully {}".format(self.url))
+                self.num_pages = 0
         return self.num_pages
 
     def get_house_list(self):

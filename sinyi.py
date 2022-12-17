@@ -18,11 +18,18 @@ class sinyi_web(house_agent_web):
         self.agent_name = "Sinyi"
 
     def get_num_pages(self):
-        self.webdriver.get(self.url)
-        WebDriverWait(self.webdriver, 30).until(EC.presence_of_element_located((By.CLASS_NAME, 'pageLinkClassName')))
-        pages_web_obj = self.webdriver.find_elements(By.CLASS_NAME, 'pageLinkClassName')
-        self.num_pages = int(pages_web_obj[-1].text)
-        print("page " + str(self.num_pages))
+        for _ in range(3):
+            try:
+                self.webdriver.get(self.url)
+                WebDriverWait(self.webdriver, 30).until(EC.presence_of_element_located((By.CLASS_NAME, 'pageLinkClassName')))
+                pages_web_obj = self.webdriver.find_elements(By.CLASS_NAME, 'pageLinkClassName')
+                self.num_pages = int(pages_web_obj[-1].text)
+                print("page " + str(self.num_pages))
+                break
+            except Exception as e:
+                print(e)
+                print("Can't load the page successfully {}".format(self.url))
+                self.num_pages = 0
         return self.num_pages
 
     def get_house_list(self):
