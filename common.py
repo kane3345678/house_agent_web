@@ -13,7 +13,7 @@ def save_json(data, filename):
 
 def read_json( filename):
     try:
-        f = open(filename)
+        f = open(filename, encoding='utf-8')
         return json.load(f)
     except Exception:
         return None
