@@ -275,5 +275,7 @@ elif args.func == "browse_new_discounted_house":
         house_drop_hist = price_drop_db.find_data(old_hist)
         if len(list(house_drop_hist)) == 0:
             driver.get(house["url"])
-            time.sleep(5)
+            # press any key to continue browsing
+            input("press any key to continue browsing")
+
     driver.close()
