@@ -88,7 +88,7 @@ class sinyi_web(house_agent_web):
     def get_web_obj_for_screen_shot(self, house_info_obj):
         self.webdriver.get(house_info_obj.url)
         WebDriverWait(self.webdriver, 30).until(EC.presence_of_element_located((By.XPATH, '//*[@id="__next"]/div/div/span/div[3]/div/div')))
-        house = self.webdriver.find_element(By.XPATH, '//*[@id="__next"]/div/div/span/div[3]/div/div')
+        house = self.webdriver.find_element(By.TAG_NAME, "body")
         return house
 
     def check_house_obj_close(self, url):

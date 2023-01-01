@@ -108,6 +108,10 @@ class house_agent_web():
                     json_path = os.path.join(screen_shot_path, "{}_house.json".format(obj_number))
                     house_info_obj.save_house_info_to_json_data(json_path)
                     house.screenshot(png_path)
+                    self.webdriver.execute_script("window.scrollTo(0, 800);")
+                    time.sleep(0.5)
+                    png_path = os.path.join(screen_shot_path, "{}_house2.png".format(self.date_time_str))
+                    house.screenshot(png_path)
                     time.sleep(3)
 
             except Exception as e:

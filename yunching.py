@@ -62,6 +62,10 @@ class yun_ching_web(house_agent_web):
             screen_shot_path = os.path.join("yunching", obj_number)
             os.system("mkdir {}".format(screen_shot_path))
             png_path = os.path.join(screen_shot_path, "{}_house.png".format(self.date_time_str))
+            house.screenshot(png_path)
+            self.webdriver.execute_script("window.scrollTo(0, 800);")
+            time.sleep(0.5)
+            png_path = os.path.join(screen_shot_path, "{}_house2.png".format(self.date_time_str))
 
             house.screenshot(png_path)
             cnt += 1
@@ -109,7 +113,7 @@ class yun_ching_web(house_agent_web):
     def get_web_obj_for_screen_shot(self, house_info_obj):
         self.webdriver.get(house_info_obj.url)
         WebDriverWait(self.webdriver, 30).until(EC.presence_of_element_located((By.XPATH, "/html/body/main/section[1]")))
-        house = self.webdriver.find_element(By.XPATH, "/html/body/main/section[1]")
+        house = self.webdriver.find_element(By.TAG_NAME, "body")
         return house
 
     def check_house_obj_close(self, url):
