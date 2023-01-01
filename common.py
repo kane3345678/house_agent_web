@@ -2,14 +2,20 @@ import json
 from os import path
 import os
 from pathlib import Path
-import glob, os
+import datetime
+import codecs
+from selenium.webdriver.common.by import By
+from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.support import expected_conditions as EC
 
 def save_json(data, filename):
     if not path.exists(os.path.dirname(filename)):
         Path(os.path.dirname(filename)).mkdir(parents=True, exist_ok=True)
 
-    with open(filename, 'w') as f:
-        json.dump(data, f, indent=2)
+    # Open the file in write mode, using utf-8 encoding
+    with codecs.open(filename, mode="w", encoding="utf-8") as f:
+        # Use json.dump() to write the data to the file
+        json.dump(data, f, indent=4, ensure_ascii=False)
 
 def read_json( filename):
     try:
@@ -44,3 +50,24 @@ def find_files_in_dir(dir, file_pattern):
             if re.match(file_pattern, file) != None:
                 file_list.append(os.path.join(root, file))
     return file_list
+
+# date_str = 111-12-13, return 2022-12
+def roc_date_to_ad_date(date_str):
+    year = int(date_str.split("/")[0]) + 1911
+    month = date_str.split("/")[1]
+    new_date = "{}/{}".format(year, month)
+    new_date = datetime.datetime.strptime(new_date, "%Y/%m")
+    return new_date
+
+def download_json(webdriver, url):
+    try:
+        WebDriverWait(webdriver, 30).until(EC.presence_of_element_located((By.TAG_NAME, "body")))
+
+        webdriver.get(url)
+        json_content = webdriver.find_elements(By.TAG_NAME, "body")[0].text
+        # Parse the JSON content
+        parsed_json = json.loads(json_content)
+        return parsed_json
+    except Exception:
+        print("Exception happen while loading {}".format(url))
+        return {}
