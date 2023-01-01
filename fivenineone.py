@@ -80,6 +80,7 @@ class fivenineone_web(house_agent_web):
     def get_num_of_price(self, community_info):
         url = community_info["url"]
         self.webdriver.get(url + "/price")
+        # 2 possible xpath for num of price
         num_price_xpath = ['//*[@id="__nuxt"]/main/section/section[2]/div[3]/span/strong',
                             '//*[@id="__nuxt"]/main/section/section[2]/div[2]/span/strong']
         for xpath in num_price_xpath:
