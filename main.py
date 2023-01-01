@@ -3,6 +3,7 @@ import time
 from sinyi import sinyi_web
 from yunching import yun_ching_web
 from fivenineone import fivenineone_web
+import random
 import common
 from argparse import ArgumentParser
 import common as c
@@ -281,12 +282,15 @@ elif args.func == "browse_new_discounted_house":
 
     driver.close()
 
-elif args.func == "collect_deal_by_region":
+elif args.func == "591_collect_deal_by_region":
     driver = init_browser()
     fivenineone = fivenineone_web(driver, "", "")
     db = init_database("house", "deal")
 
-    comm_list = fivenineone.get_community_list("https://market.591.com.tw/list?regionId=3&sectionId=37&postType=2","新北市永和區")
+    #comm_list = fivenineone.get_community_list("https://market.591.com.tw/list?regionId=3&sectionId=37&postType=8,2","新北市永和區")
+    #comm_list = fivenineone.get_community_list("https://market.591.com.tw/list?regionId=3&sectionId=38&postType=2,8","新北市中和區")
+    #comm_list = fivenineone.get_community_list("https://market.591.com.tw/list?regionId=3&sectionId=44&postType=2,8","新北市新莊區")
+    comm_list = fivenineone.get_community_list("https://market.591.com.tw/list?regionId=3&sectionId=26&postType=2,8","新北市板橋區")
 
     for comm in comm_list:
         comm_num_of_price = fivenineone.get_num_of_price(comm)
