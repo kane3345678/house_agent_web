@@ -3,7 +3,6 @@ import time
 from sinyi import sinyi_web
 from yunching import yun_ching_web
 from fivenineone import fivenineone_web
-
 import common
 from argparse import ArgumentParser
 import common as c
@@ -239,11 +238,11 @@ elif args.func == "browse_new_house":
     i = 0
     query_date = today_with_time
     while i < int(args.period):
-        new_house = new_house_db.find_data({"date":query_date})
+        new_house = list(new_house_db.find_data({"date":query_date}))
         print("browse new house in {}".format(str(query_date)))
         for house in tqdm(new_house):
             driver.get(house["url"])
-            time.sleep(5)
+            input("press any key to continue browsing")
         query_date = query_date - datetime.timedelta(days=1)
         i += 1
     driver.close()
