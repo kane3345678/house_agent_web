@@ -1,5 +1,6 @@
 from sinyi import sinyi_web
 from yunching import yun_ching_web
+from fivenineone import fivenineone_web
 
 all_agents = [
         {
@@ -23,4 +24,11 @@ all_agents = [
 
             ]
         }
+]
+
+gov_deal_591 = [
+    {"url":"https://market.591.com.tw/list?regionId=3&sectionId=37&postType=8,2", "district":"新北市永和區"},
+    {"url":"https://market.591.com.tw/list?regionId=3&sectionId=38&postType=2,8", "district":"新北市中和區"},
+    {"url":"https://market.591.com.tw/list?regionId=3&sectionId=44&postType=2,8", "district":"新北市新莊區"},
+    {"url":"https://market.591.com.tw/list?regionId=3&sectionId=26&postType=2,8", "district":"新北市板橋區"},
 ]

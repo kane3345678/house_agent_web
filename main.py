@@ -287,18 +287,16 @@ elif args.func == "591_collect_deal_by_region":
     fivenineone = fivenineone_web(driver, "", "")
     db = init_database("house", "deal")
 
-    #comm_list = fivenineone.get_community_list("https://market.591.com.tw/list?regionId=3&sectionId=37&postType=8,2","新北市永和區")
-    #comm_list = fivenineone.get_community_list("https://market.591.com.tw/list?regionId=3&sectionId=38&postType=2,8","新北市中和區")
-    #comm_list = fivenineone.get_community_list("https://market.591.com.tw/list?regionId=3&sectionId=44&postType=2,8","新北市新莊區")
-    comm_list = fivenineone.get_community_list("https://market.591.com.tw/list?regionId=3&sectionId=26&postType=2,8","新北市板橋區")
+    for gov_deal in house_list.gov_deal_591:
+        comm_list = fivenineone.get_community_list(gov_deal["url"], gov_deal["district"])
 
-    for comm in comm_list:
-        comm_num_of_price = fivenineone.get_num_of_price(comm)
-        db_num_of_price = len(list(db.find_data({"comm_id":comm["id"]})))
-        if db_num_of_price == comm_num_of_price:
-            print("{} no update".format(comm["name"]))
-            continue
-        comm_deal = fivenineone.get_deal_per_community(comm)
-        for deal in comm_deal:
-            deal["data_date"] = today_with_time
-            db.insert_data(deal)
+        for comm in comm_list:
+            comm_num_of_price = fivenineone.get_num_of_price(comm)
+            db_num_of_price = len(list(db.find_data({"comm_id":comm["id"]})))
+            if db_num_of_price == comm_num_of_price:
+                print("{} no update".format(comm["name"]))
+                continue
+            comm_deal = fivenineone.get_deal_per_community(comm)
+            for deal in comm_deal:
+                deal["data_date"] = today_with_time
+                db.insert_data(deal)
