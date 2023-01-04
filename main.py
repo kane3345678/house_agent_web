@@ -191,7 +191,7 @@ elif args.func == "find_close_case":
 elif args.func == "show_price_drop_hist":
     db = init_database("house", "price_drop")
     start_date = datetime.datetime(2022, 10, 12)
-    end_date = datetime.datetime(2022, 12, 31)
+    end_date = datetime.datetime(2023, 5, 31)
     delta = datetime.timedelta(days=1)
     # iterate date from 10-12 to 12-31
     while (start_date <= end_date):
