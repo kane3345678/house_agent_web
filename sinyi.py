@@ -30,6 +30,8 @@ class sinyi_web(house_agent_web):
                 print(e)
                 print("Can't load the page successfully {}".format(self.url))
                 self.num_pages = 0
+        # this delay is necessary to avoid hang up
+        time.sleep(3)
         return self.num_pages
 
     def get_house_list(self):
