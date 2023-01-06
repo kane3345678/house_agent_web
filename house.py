@@ -143,7 +143,7 @@ class house_agent_web():
         # The timestamp in database is 8 hour basis
         # ex: if we fetch data at 10PM, then the data fetched in 2PM is considered exist
         db_data_date = datetime.datetime(self.now.year, self.now.month,
-                                    self.now.day, self.now.hour - 8)
+                                    self.now.day, max(self.now.hour - 8, 0))
         new_data_date = datetime.datetime(self.now.year, self.now.month,
                                     self.now.day, self.now.hour)
 
