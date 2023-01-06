@@ -27,6 +27,7 @@ parser = ArgumentParser()
 parser.add_argument("-f", "--function", help="Decide what function is run", dest="func", default="fetch_price")
 parser.add_argument("-j", "--json", help="json file", dest="js", default="")
 parser.add_argument("-p", "--period", help="", dest="period", default=2)
+parser.add_argument("-d", "--dist", help="", dest="district", default="")
 
 args = parser.parse_args()
 
@@ -299,4 +300,41 @@ elif args.func == "591_collect_deal_by_region":
             comm_deal = fivenineone.get_deal_per_community(comm)
             for deal in comm_deal:
                 deal["data_date"] = today_with_time
+                db.insert_data(deal)
+
+
+elif args.func == "cpking_collect_deal_by_region":
+    from cpking import cpking_web
+    driver = init_browser()
+    cpking = cpking_web(driver, "", "")
+    db = init_database("house", "deal_cpking")
+    comm_db = init_database("house", "deal_comm_list_cpking")
+
+    for gov_deal in house_list.gov_deal_cpking:
+        # if args.district is provided, then only collet the deal data by given district
+        if args.district != "" and gov_deal["district"] != args.district:
+            continue
+        comm_list = cpking.get_community_list(gov_deal["url"],gov_deal["district"])
+        # save to mongo db
+
+        for comm in tqdm(comm_list):
+            comm_db.update_data({"id":comm["id"]}, comm)
+            latest_comm_data = db.find_data({"communityID":comm["id"]})
+            comm["num_data_in_db"] = len(list(latest_comm_data))
+            if comm["dealCaseCount"] == comm["num_data_in_db"]:
+                print("{} num of case no update".format(comm["name"]))
+                continue
+            time.sleep(random.randint(0,3))
+            comm_deal = cpking.get_deal_per_community(comm)
+            if comm_deal == []:
+                print("{} no update".format(comm["name"]))
+                continue
+            # need to update community data
+            db.delete_many({"communityID":comm["id"]})
+            for deal in comm_deal:
+                deal["data_date"] = today_with_time
+                if len(comm_deal[0]["communityTags"]) != 0:
+                    deal["comm_name"] = comm_deal[0]["communityTags"][0]
+                else:
+                    deal["comm_name"] = comm["name"]
                 db.insert_data(deal)

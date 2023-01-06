@@ -32,3 +32,13 @@ gov_deal_591 = [
     {"url":"https://market.591.com.tw/list?regionId=3&sectionId=44&postType=2,8", "district":"新北市新莊區"},
     {"url":"https://market.591.com.tw/list?regionId=3&sectionId=26&postType=2,8", "district":"新北市板橋區"},
 ]
+
+gov_deal_cpking = [
+    {"url":"https://community.houseprice.tw/ws/list/%E6%96%B0%E5%8C%97%E5%B8%82_city/%E6%B0%B8%E5%92%8C%E5%8D%80_zip", "district":"新北市永和區"},
+    {"url":"https://community.houseprice.tw/ws/list/%E6%96%B0%E5%8C%97%E5%B8%82_city/%E4%B8%AD%E5%92%8C%E5%8D%80_zip", "district":"新北市中和區"},
+    {"url":"https://community.houseprice.tw/ws/list/%E6%96%B0%E5%8C%97%E5%B8%82_city/%E6%9D%BF%E6%A9%8B%E5%8D%80_zip", "district":"新北市板橋區"},
+    {"url":"https://community.houseprice.tw/ws/list/%E6%96%B0%E5%8C%97%E5%B8%82_city/%E6%96%B0%E8%8E%8A%E5%8D%80_zip", "district":"新北市新莊區"},
+    {"url":"https://community.houseprice.tw/ws/list/%E6%96%B0%E5%8C%97%E5%B8%82_city/%E6%96%B0%E5%BA%97%E5%8D%80_zip", "district":"新北市新店區"},
+    {"url":"https://community.houseprice.tw/ws/list/%E6%96%B0%E5%8C%97%E5%B8%82_city/%E6%9E%97%E5%8F%A3%E5%8D%80_zip", "district":"新北市林口區"},
+
+]
