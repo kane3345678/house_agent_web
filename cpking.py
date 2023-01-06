@@ -12,7 +12,7 @@ from selenium.webdriver.support.ui import WebDriverWait
 from selenium.common.exceptions import NoSuchElementException
 from tqdm import tqdm
 import datetime
-
+import random
 class cpking_web(house_agent_web):
     def __init__(self, webdriver, url, region = "永和") -> None:
         super().__init__(webdriver, url, region)
@@ -72,30 +72,53 @@ class cpking_web(house_agent_web):
 
     def get_deal_per_community(self, community_info):
         all_deal = []
-        num_items = 1000000
-        page = 1
-        while len(all_deal) < num_items:
+        num_items = 0
+        for _ in range(1, 3):
             try:
-                url = "https://community.houseprice.tw/ws/building/{}/price/date-desc_sort/?p={}".format(community_info["id"], page)
+                url = "https://community.houseprice.tw/ws/building/{}/price/date-desc_sort/?p={}".format(community_info["id"], 1)
                 data = comm.download_json(self.webdriver, url)
                 num_items = data["deal"]["pa"]["totalitemcount"]
+                if num_items != 0:
+
+                    break
+                print("No deal found for community {}, retry in 10s".format(community_info["name"]))
+                time.sleep(10)
             except Exception as e:
                 print("page load failretry {}".format(url))
                 time.sleep(10)
                 continue
-            if len(data["deal"]["list"]) == 0:
-                print("No data found, keep trying page {}".format(page))
+
+        page = 1
+        retry = 3
+        while len(all_deal) < num_items:
+            if retry == 0:
+                print("retry is 0 now, reset all data and retry")
+                retry = 3
+                all_deal = []
+                page = 1
+
+            try:
+                url = "https://community.houseprice.tw/ws/building/{}/price/date-desc_sort/?p={}".format(community_info["id"], page)
+                data = comm.download_json(self.webdriver, url)
+                num_items_in_page = data["deal"]["pa"]["rend"] - data["deal"]["pa"]["rstart"] + 1
+
+                if data['code'] == 404 or len(data["deal"]["list"]) == 0 or\
+                        num_items_in_page != len(data["deal"]["list"]):
+                    print("num of data is wrong, keep trying page {}".format(page))
+                    time.sleep(15)
+                    retry -= 1
+                    continue
+            except Exception as e:
+                print("page load failretry {}".format(url))
                 time.sleep(10)
+                retry -= 1
                 continue
+
             page += 1
-            # compare num data btwn cpking and db, see if it's necesary to update
-            if community_info["num_data_in_db"] == num_items:
-                print("latest data is same with database")
-                return []
 
             for i in data["deal"]["list"]:
                 all_deal.append(i)
-            time.sleep(0.5)
+            time.sleep(random.randint(1,3))
         if len(all_deal) == 1:
             print("wrong")
         print("Found {} deals".format(len(all_deal)))
