@@ -273,7 +273,7 @@ elif args.func == "browse_new_discounted_house":
     driver = init_browser()
     query_date_end = query_date_start - datetime.timedelta(days=int(args.period))
     for house in tqdm(discount_houses):
-        old_hist = {"house_obj_id":house["house_obj_id"],"date":query_date_end}
+        old_hist = {"house_obj_id":house["house_obj_id"],"date":{"$lt": query_date_end}}
         house_drop_hist = price_drop_db.find_data(old_hist)
         if len(list(house_drop_hist)) == 0:
             driver.get(house["url"])
