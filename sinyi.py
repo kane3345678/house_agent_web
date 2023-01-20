@@ -60,7 +60,7 @@ class sinyi_web(house_agent_web):
                 obj_url = house.find_element(By.TAG_NAME, "a").get_attribute('href')
 
                 price_obj = house.find_element(By.CLASS_NAME, "LongInfoCard_Type_Right")
-                
+
                 # '3,288萬\n(含車位價)\n加入最愛'
                 # '2.28%\n4,380萬4,280萬\n(含車位價)\n加入最愛'
 
@@ -76,11 +76,12 @@ class sinyi_web(house_agent_web):
                 # WA to skip invalid house
                 if (obj_number == "house"):
                     continue
+
                 house_obj = house_info(house_name, obj_number, obj_url, house_price, house_addr, self.now)
                 self.house_obj_list.append(house_obj)
 
                 if self.check_new_house(obj_number):
-                    self.new_house_obj_list.append(house_obj)                
+                    self.new_house_obj_list.append(house_obj)
                 cnt += 1
             except Exception as e:
                 print("While capturing {}th house", cnt)
@@ -96,10 +97,51 @@ class sinyi_web(house_agent_web):
     def check_house_obj_close(self, url):
         self.webdriver.get(url)
         try:
+            WebDriverWait(self.webdriver, 30).until(EC.presence_of_element_located((By.XPATH, '/html/body/div[1]/div/div/span/div[3]/div/div/div[2]')))
             web_elem = self.webdriver.find_element(By.XPATH, '/html/body/div[1]/div/div/span/div[3]/div/div/div[2]')
         except NoSuchElementException:
             return False
-
-        if "找不到這一頁" in web_elem.text:
+        if "找不到這一頁" in web_elem.text or "繼續找好屋" in web_elem.text:
             return True
         return False
+
+    def get_community_name(self):
+        #/html/body/main/section[2]/section[4]/div[1]/ul/li[1]
+        try:
+            web_elem = self.webdriver.find_element(By.XPATH, '//*[@id="__next"]/div/div/span/div[3]/div/div/div[4]/div/div[1]/a/div')
+            print(web_elem.text)
+            return web_elem.text
+        except NoSuchElementException:
+            return "NULL"
+
+    def get_house_age(self):
+        for retry in range(3):
+            #"/html/body/main/section[1]/div[1]/div[2]"
+            try:
+                WebDriverWait(self.webdriver, 30).until(EC.presence_of_element_located((By.XPATH, '//*[@id="__next"]/div/div/span/div[3]/div/div/div[5]/div[1]/div[1]/div[3]/div')))
+                web_elem = self.webdriver.find_element(By.XPATH, '//*[@id="__next"]/div/div/span/div[3]/div/div/div[5]/div[1]/div[1]/div[3]/div')
+                #ex: ''37.3年\n店面''
+                if "年" in web_elem.text:
+                    age = re.findall('\d+.\d+',web_elem.text)[0]
+
+                    print("house age = " , age)
+                    return age
+                else:
+                    return 'NULL'
+            except Exception as e:
+                print("get_community_name, exception happen, sleep 1min ")
+                time.sleep(120)
+        return "NULL"
+
+    def get_house_floor(self):
+        for retry in range(3):
+            try:
+                WebDriverWait(self.webdriver, 30).until(EC.presence_of_element_located((By.CLASS_NAME, 'buy-content-detail-floor')))
+                web_elem = self.webdriver.find_element(By.CLASS_NAME, 'buy-content-detail-floor')
+
+                return web_elem.text
+
+            except Exception as e:
+                print("get_house_floor, exception happen, sleep 1min ")
+                time.sleep(120)
+        return "NULL"

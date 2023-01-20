@@ -338,3 +338,79 @@ elif args.func == "cpking_collect_deal_by_region":
                 else:
                     deal["comm_name"] = comm["name"]
                 db.insert_data(deal)
+
+elif args.func == "test":
+    db = init_database()
+    db_close_case = init_database("house", "close_case")
+    driver = init_browser()
+    from bson.objectid import ObjectId
+
+    house_obj_list = db.find_data_distinct("house_obj_id")
+    all_data = {"full_data":[]}
+
+    def all_data_append(house_data):
+        house_data[0].pop("_id")
+        house_data[0]['date'] = str(house_data[0]['date'])
+        all_data["full_data"].append(house_data[0])
+
+    for i in tqdm(house_obj_list):
+        house_data = db.find_data_order_by_date({"house_obj_id":i})
+        house_data = list(house_data)
+        if db_close_case.check_exist({"house_obj_id":i}) or house_data[0]["community"] != "TBD":
+            continue
+        if house_data[0]["community"] != "TBD":
+            continue
+        print("Found {}".format(house_data[0]["community"]))
+        if check_house_close_on_website(driver, house_data[0]["url"]):
+            # found house is not updated and not found on website
+            print("=" * 20)
+            print(house_data[0])
+            print("=" * 20)
+            # save it to mongo db
+            house_data[0].pop("_id")
+            db_close_case.update_data({"house_obj_id":house_data[0]["house_obj_id"]}, house_data[0])
+        else:
+            #fill community
+            #driver.get(house_data[0]["url"])
+            if "yung" in house_data[0]["url"]:
+                web = yun_ching_web(driver, house_data[0]["url"], "")
+            else:
+                web = sinyi_web(driver, house_data[0]["url"], "")
+
+            time.sleep(1.5)
+            house_data[0]["community"] = web.get_community_name()
+            house_age = web.get_house_age()
+            if house_data[0]["community"] == "NULL":
+                user_input_comm = input("pls enter comm name")
+                if user_input_comm != "":
+                    house_data[0]["community"] = user_input_comm
+                # get user input and assign to house_data[0]["community"] 
+
+
+
+            for h in house_data:
+                h["community"] = house_data[0]["community"]
+                db.update_data({"_id":ObjectId(h["_id"])}, h)
+
+elif args.func == "test2":
+    db = init_database()
+    comm_list = list(db.find_data_distinct("community"))
+    for c in comm_list:
+        if "程茂" not in c:
+            continue
+        for i in db.find_data({"community":c}):
+            if "yung" in i['url']:
+                agent = "yunching"
+            else:
+                agent = "sinyi"
+            # get current working path
+            folder = os.path.join(os.getcwd(), "data", agent,"新莊",i['house_obj_id'])
+            print (folder)
+
+elif args.func == "test3":
+    driver = init_browser()
+    url = "https://buy.yungching.com.tw/house/5645263"
+    web = yun_ching_web(driver, url, "永和")
+    driver.get(url)
+    print(web.get_house_floor())
+    print(web.get_house_age())
