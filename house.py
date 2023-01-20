@@ -7,16 +7,19 @@ import os
 import time
 from bson.objectid import ObjectId
 class house_info():
-    def __init__(self, name, obj_id, url, price, addr, timestamp, community = "TBD", year = 0) -> None:
+    def __init__(self, name, obj_id, url, price, addr, timestamp, community = "TBD", year = 0, floor = -1, age = -1, need_update = False) -> None:
         self.url = url
         self.year = year
         self.name = name
         self.obj_id = obj_id
         self.price = price
         self.addr = addr
+        self.floor = floor
+        self.age = age
         self.community = community
         self.now_timestamp = timestamp
         self.date_time_str = self.now_timestamp.strftime("%Y-%m-%d-%H")
+        self.need_update = need_update
 
     def house_info_to_json_data(self):
         price_history = {"date":self.date_time_str, "price":self.price}
@@ -31,12 +34,7 @@ class house_info():
             # since we have a history for this house, let's append the price to the history
             price_info = {"date":self.date_time_str, "price":self.price}
             # check if the price history exist or not
-            for p_info in house_data['price']:
-                if price_info["date"] not in p_info["date"]:
-                    house_data['price'].append(price_info)
-                else:
-                    print("skip")
-                    break
+            house_data['price'].append(price_info)
 
         common.save_json(house_data, json_path)
 
@@ -84,13 +82,16 @@ class house_agent_web():
         retry = 0
         while house_no < len(self.house_obj_list):
             house_info_obj = self.house_obj_list[house_no]
+
             try:
                 print(house_info_obj.name, house_info_obj.price, house_info_obj.url, house_info_obj.addr)
                 last_hist_price = self.check_latest_price_from_mongodb(house_info_obj.obj_id)
 
-                if self.house_info_exist_in_db(house_info_obj):
-                    print("{} is captured before at {}, skip".format(house_info_obj.name, self.date_time_str))
-                elif last_hist_price == house_info_obj.price:
+                self.house_obj_list[house_no].community = self.get_comm_name_in_db(house_info_obj.obj_id)
+                self.house_obj_list[house_no].floor = self.get_floor_in_db(house_info_obj.obj_id)
+                self.house_obj_list[house_no].age = self.get_age_in_db(house_info_obj.obj_id)
+                # this will find out if the house is updated by datetime.now() or not
+                if last_hist_price == house_info_obj.price:
                     print("obj_id {}, price unchanged {}, skip and kill same record".format(house_info_obj.obj_id, house_info_obj.price))
                     # rm the same price in db
                     self.delete_house_by_price_db(house_info_obj.obj_id, last_hist_price)
@@ -98,8 +99,10 @@ class house_agent_web():
                     print("obj_id {}, price changed; before: {}, after: {}".format(house_info_obj.obj_id, last_hist_price, house_info_obj.price))
 
                     obj_number = house_info_obj.obj_id
-
                     house = self.get_web_obj_for_screen_shot(house_info_obj)
+
+                    self.house_obj_list[house_no].community = self.get_house_floor()
+                    self.house_obj_list[house_no].age = self.get_house_age()
 
                     screen_shot_path = os.path.join("data", self.agent_name.lower(), self.region, obj_number)
                     Path(screen_shot_path).mkdir(parents=True, exist_ok=True)
@@ -139,6 +142,31 @@ class house_agent_web():
                                     self.now.day, self.now.hour)
         return self.db.check_exist({"date": {"$eq": date}, "house_obj_id":house_info_obj.obj_id})
 
+    def get_comm_name_in_db(self, objid):
+            # check if community is filled in db:
+        filter = {"house_obj_id":objid, "community":{"$ne":"TBD"}}
+        data = list(self.db.find_data(filter))
+        if len(data) != 0:
+            return data[0]["community"]
+        else:
+            return "TBD"
+
+    def get_age_in_db(self, objid):
+        filter = {"house_obj_id":objid, "age": {"$exists": True}}
+        data = list(self.db.find_data(filter))
+        if len(data) != 0:
+            return data[0]["age"]
+        else:
+            return -1
+
+    def get_floor_in_db(self, objid):
+        filter = {"house_obj_id":objid, "floor": {"$exists": True}}
+        data = list(self.db.find_data(filter))
+        if len(data) != 0:
+            return data[0]["floor"]
+        else:
+            return -1
+
     def save_house_to_mongodb(self):
         # The timestamp in database is 8 hour basis
         # ex: if we fetch data at 10PM, then the data fetched in 2PM is considered exist
@@ -149,9 +177,10 @@ class house_agent_web():
 
         for house in self.house_obj_list:
             data = {"house_name": house.name, "house_obj_id":house.obj_id, "price":house.price,
-                    "addr":house.addr, "url":house.url, "community":house.community, "date":new_data_date}
-            if not self.db.check_exist({"date": {"$gte": db_data_date}, "house_obj_id":house.obj_id}):
-                self.db.insert_data(data)
+                    "addr":house.addr, "url":house.url, "community":house.community, "date":new_data_date,
+                    "age":house.age, "floor":house.floor}
+            #if not self.db.check_exist({"date": {"$gte": db_data_date}, "house_obj_id":house.obj_id}):
+            self.db.insert_data(data)
 
     def check_latest_price_from_mongodb(self, obj_id):
         data = list(self.db.find_data_order_by_date({"house_obj_id":obj_id}))

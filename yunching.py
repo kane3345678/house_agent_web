@@ -126,3 +126,55 @@ class yun_ching_web(house_agent_web):
         if "已經不存在" in web_elem.text:
             return True
         return False
+
+    def get_community_name(self):
+        # retry 3 times 
+        for retry in range(3):
+            #/html/body/main/section[2]/section[4]/div[1]/ul/li[1]
+            try:
+                WebDriverWait(self.webdriver, 30).until(EC.presence_of_element_located((By.CLASS_NAME, 'detail-list-lv1')))   
+                web_elem = self.webdriver.find_element(By.CLASS_NAME, "m-house-detail-ins")
+                #ex: '鴻運金大樓\n追蹤社區新案'
+                if "追蹤社區" in web_elem.text:
+                    print(web_elem.text.split("\n")[0])
+                    return web_elem.text.split("\n")[0]
+                else:
+                    return 'NULL'
+            except Exception as e:
+                print("get_community_name, exception happen, sleep 2 min ")
+                time.sleep(120)
+        return "NULL"
+
+    def get_house_age(self):
+        for _ in range(3):
+            #"/html/body/main/section[1]/div[1]/div[2]"
+            try:
+                WebDriverWait(self.webdriver, 30).until(EC.presence_of_element_located((By.CLASS_NAME, 'm-house-info-wrap')))
+                web_elem = self.webdriver.find_element(By.CLASS_NAME, 'm-house-info-wrap')
+                #'建物 32.43坪\n3房(室)2廳2衛\n41.0年 公寓 3~3/5樓'
+                age_info = web_elem.text.split("\n")[-1]
+                if "年" in age_info:
+                    age = re.findall('\d+.\d+',age_info)[0]
+                    print("house age = " , age)
+                    return float(age)
+                elif "預售" in age_info:
+                    return 0
+
+            except Exception as e:
+                print("get_community_name, exception happen, sleep 2 min ")
+                time.sleep(120)
+        return -1
+
+
+    def get_house_floor(self):
+        for _ in range(3):
+            try:
+                WebDriverWait(self.webdriver, 30).until(EC.presence_of_element_located((By.CLASS_NAME, 'm-house-info-wrap')))
+                web_elem = self.webdriver.find_element(By.CLASS_NAME, 'm-house-info-wrap')
+                #'建物 32.43坪\n3房(室)2廳2衛\n41.0年 公寓 3~3/5樓'
+                return web_elem.text.split(" ")[-1]
+
+            except Exception as e:
+                print("get_house_floor, exception happen, sleep 2 min ")
+                time.sleep(120)
+        return "NULL"

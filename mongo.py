@@ -20,9 +20,8 @@ class MongoDB():
     def find_data_order_by_date(self, mongo_scipt, order = pymongo.DESCENDING):
         return self.collection.find(mongo_scipt).sort('date',pymongo.DESCENDING)
 
-    def find_one(self, mongo_scipt):
+    def count_data(self, mongo_scipt):
         a = self.collection.count_documents(mongo_scipt)
-        print(a)
         return a
 
     def check_exist(self, mongo_scipt):
