@@ -71,3 +71,23 @@ def download_json(webdriver, url):
     except Exception:
         print("Exception happen while loading {}".format(url))
         return {}
+
+# search folder recursively and return the path of the folder
+def search_folder(folder, folder_name):
+    for root, dirs, files in os.walk(folder):
+        if folder_name in dirs:
+            return os.path.join(root, folder_name)
+    return None
+
+# find the latest png file in the folder
+def find_latest_png_file(folder):
+    import re
+    file_list = []
+    for root, dirs, files in os.walk(folder):
+        for file in files:
+            if re.findall(".house.png", file) != []:
+                file_list.append(os.path.join(root, file))
+    if len(file_list) == 0:
+        return None
+    file_list.sort(key=os.path.getmtime)
+    return file_list[-1]
