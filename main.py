@@ -15,6 +15,7 @@ from tqdm import tqdm
 from datetime import date
 import house_list
 from selenium.webdriver.chrome.service import Service
+from bson.objectid import ObjectId
 
 date_str = datetime.datetime.now().strftime("%Y-%m-%d-%H")
 today = date.today()
@@ -40,17 +41,18 @@ def init_browser():
     return driver
 
 def init_database(db_name=None, collection=None):
-    if db_name == None:
-        print("Loading database assigned by config.json")
-        db = MongoDB(c.get_config("mongodb", "mongodb://localhost:27017/"),
-                c.get_config("mongodb_dbname", "house"),
-                c.get_config("mongodb_collection", "house_hist"))
-    else:
-        print("Loading database assigned {}, {}".format(db_name, collection))
-        db = MongoDB("mongodb://localhost:27017/", db_name, collection)
+    if db_name is None:
+        db_name = c.get_config("mongodb_dbname", "house")
+    if collection is None:
+        collection = c.get_config("mongodb_collection", "house_hist")
+    print("Loading database assigned {}, {}".format(db_name, collection))
+    db = MongoDB(c.get_config("mongodb", "mongodb://localhost:27017/"), db_name, collection)
     return db
 
 def fetch_price():
+    """
+    This function captures the data for all house agents websites, saves the house information to MongoDB, and takes a screenshot of the house.
+    """
     configs = common.read_json("config.json")
     driver = webdriver.Chrome(executable_path=configs["chromedriver_path"])
     driver.maximize_window()
@@ -73,6 +75,9 @@ def fetch_price():
     driver.quit()
 
 def check_price_cut():
+    """
+    This function checks if the price of a house has changed and saves the information to MongoDB.
+    """
     price_drop_db = init_database("house", "price_drop")
     db = init_database()
     house_obj_list = db.find_data_distinct("house_obj_id")
@@ -107,6 +112,9 @@ def check_price_cut():
         c.save_json(all_data, os.path.join("sales_history","price_cut_" + date_str + ".json"))
 
 def check_new_house():
+    """
+    This function checks for new house data that is one day old or less and saves it to a new_house_db.
+    """
     db = init_database()
     new_house_db = init_database("house", "new_house")
 
@@ -122,10 +130,7 @@ def check_new_house():
             now = datetime.datetime.now()
             diff = now - latest_data_date
             # new house data must be one day old only
-            if diff.days * 86400 + diff.seconds < 86400:
-                print("=" * 20)
-                print(house_data[0])
-                print("=" * 20)
+            if diff.days < 1:
                 house_data[0].pop("_id")
                 house_data[0]['date'] = today_with_time
                 all_data["full_data"].append(house_data[0])
@@ -141,6 +146,10 @@ def check_house_close_on_website(driver, url):
         return sinyi.check_house_obj_close(url)
 
 def locate_house_png(house_data):
+    """
+    This function locates the house png file in the data folder.
+    and return the latest png file to the caller
+    """
     # get current working folder path
     if "sinyi" in house_data[0]["url"]:
         folder = os.path.join(os.getcwd(), "data", "sinyi")
@@ -150,6 +159,9 @@ def locate_house_png(house_data):
     return c.find_latest_png_file(possible_folder)
 
 def find_close_case():
+    """
+    This function checks if a house has been closed and saves the information to close_case collection in MongoDB.
+    """
     db = init_database()
     driver = init_browser()
     db_close = init_database("house", "close_case")
@@ -157,7 +169,7 @@ def find_close_case():
     house_obj_list = db.find_data_distinct("house_obj_id")
     all_data = {"full_data":[]}
 
-    def all_data_append(house_data):
+    def append_house_data(house_data):
         house_data[0].pop("_id")
         house_data[0]['date'] = str(house_data[0]['date'])
         all_data["full_data"].append(house_data[0])
@@ -174,7 +186,7 @@ def find_close_case():
             continue
         elif db.check_exist({"close":'yes', "house_obj_id":i}):
             # database indicates the house data is closed before
-            all_data_append(house_data)
+            append_house_data(house_data)
             continue
         elif check_house_close_on_website(driver, house_data[0]["url"]):
             # found house is not updated and not found on website
@@ -209,7 +221,7 @@ def find_close_case():
             house_data[0].pop("_id")
             db_close.insert_data(house_data[0])
 
-            all_data_append(house_data)
+            append_house_data(house_data)
     if len(all_data["full_data"]):
         c.save_json(all_data, os.path.join("sales_history","close_case_" + date_str + ".json"))
 if args.func == "fetch_price":
@@ -288,6 +300,9 @@ elif args.func == "browse_new_house":
     driver.close()
 
 elif args.func == "browse_new_discounted_house":
+    """
+    This function browses discounted house data within the last ten days
+    """
     price_drop_db = init_database("house", "price_drop")
     query_date_start = datetime.datetime(
         year=today.year,

@@ -61,11 +61,9 @@ class cpking_web(house_agent_web):
     def get_num_of_price(self, community_info):
         all_deal = []
         for page in range(1, 3):
-
             url = "https://community.houseprice.tw/ws/building/{}/price/date-desc_sort/?p={}".format(community_info["id"], page)
             data = comm.download_json(self.webdriver, url)
-            for i in data["deal"]["list"]:
-                all_deal.append(i)
+            all_deal += data["deal"]["list"]
         print("Found {} deals".format(len(all_deal)))
         return all_deal
 
