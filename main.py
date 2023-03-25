@@ -14,6 +14,7 @@ import datetime
 from tqdm import tqdm
 from datetime import date
 import house_list
+from selenium.webdriver.chrome.service import Service
 
 date_str = datetime.datetime.now().strftime("%Y-%m-%d-%H")
 today = date.today()
@@ -33,7 +34,8 @@ args = parser.parse_args()
 
 def init_browser():
     configs = common.read_json("config.json")
-    driver = webdriver.Chrome(executable_path=configs["chromedriver_path"])
+    s = Service(configs["chromedriver_path"])
+    driver = webdriver.Chrome(service=s)
     driver.maximize_window()
     return driver
 
@@ -138,9 +140,19 @@ def check_house_close_on_website(driver, url):
     else:
         return sinyi.check_house_obj_close(url)
 
+def locate_house_png(house_data):
+    # get current working folder path
+    if "sinyi" in house_data[0]["url"]:
+        folder = os.path.join(os.getcwd(), "data", "sinyi")
+    else:
+        folder = os.path.join(os.getcwd(), "data", "yunching")
+    possible_folder = c.search_folder(folder, house_data[0]["house_obj_id"])
+    return c.find_latest_png_file(possible_folder)
+
 def find_close_case():
     db = init_database()
     driver = init_browser()
+    db_close = init_database("house", "close_case")
 
     house_obj_list = db.find_data_distinct("house_obj_id")
     all_data = {"full_data":[]}
@@ -157,7 +169,7 @@ def find_close_case():
         latest_data_date = house_data[0]['date']
         now = datetime.datetime.now()
         diff = now - latest_data_date
-        if diff.days <= 0:
+        if diff.days <= 4:
             # it means the house data is updated today
             continue
         elif db.check_exist({"close":'yes', "house_obj_id":i}):
@@ -169,9 +181,34 @@ def find_close_case():
             print("=" * 20)
             print(house_data[0])
             print("=" * 20)
+            # update all data to indicate it is closed
+            if "age" not in house_data[0]:
+                print("age doesn't exist, please input the age")
+
+                # open png file in browser
+                driver.get(locate_house_png(house_data))
+                age = float(input())
+                for j in house_data:
+                    j["age"] = age
+            if house_data[0]["community"] == "NULL" and house_data[0]["age"] < 20:
+
+                # open png file in browser
+                driver.get(locate_house_png(house_data))
+
+                print(house_data[0])
+                print("community is NULL, please input the community name")
+                community = input()
+                if community == "":
+                    community = "NULL"
+                for j in house_data:
+                    j["community"] = community
+            for j in house_data:
+                j["close"] = "yes"
+                db.update_data({"_id":j["_id"]}, j)
             # save it to mongo db
             house_data[0].pop("_id")
-            db.insert_data(house_data[0])
+            db_close.insert_data(house_data[0])
+
             all_data_append(house_data)
     if len(all_data["full_data"]):
         c.save_json(all_data, os.path.join("sales_history","close_case_" + date_str + ".json"))
@@ -192,7 +229,8 @@ elif args.func == "find_close_case":
 elif args.func == "show_price_drop_hist":
     db = init_database("house", "price_drop")
     start_date = datetime.datetime(2022, 10, 12)
-    end_date = datetime.datetime(2023, 5, 31)
+    end_date = datetime.datetime.now()
+
     delta = datetime.timedelta(days=1)
     # iterate date from 10-12 to 12-31
     while (start_date <= end_date):
