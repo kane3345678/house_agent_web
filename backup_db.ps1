@@ -6,3 +6,4 @@ mongoexport --uri="mongodb://localhost:27017" /d house /c deal --out=db_backup/h
 mongoexport --uri="mongodb://localhost:27017" /d house /c deal_cpking --out=db_backup/house_db_deal_cpking_$timestamp.json
 mongoexport --uri="mongodb://localhost:27017" /d house /c deal_comm_list_cpking --out=db_backup/house_db_deal_comm_list_cpking_$timestamp.json
 mongoexport --uri="mongodb://localhost:27017" /d house /c close_case --out=db_backup/house_db_close_case_$timestamp.json
+mongoexport --uri="mongodb://localhost:27017" /d house /c gov_dealdata --out=db_backup/house_db_gov_dealdata_$timestamp.json
