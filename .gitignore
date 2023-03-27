@@ -1,1 +1,9 @@
 data/
+community_deal/
+db_backup/
+gov_realstate_data/
+output/
+sales_history/
+*csv
+*pyc
+*png
