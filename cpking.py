@@ -49,7 +49,7 @@ class cpking_web(house_agent_web):
         for page in range(1, 100):
             data = comm.download_json(self.webdriver, 
                     "{}/?p={}".format(url, page))
-            if len(data["searchList"]) == 0:
+            if "searchList" in  data and len(data["searchList"]) == 0:
                 break
             for i in data["searchList"]:
                 all_comm.append(i)
