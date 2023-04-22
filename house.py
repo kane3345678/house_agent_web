@@ -86,12 +86,16 @@ class house_agent_web():
             try:
                 print(house_info_obj.name, house_info_obj.price, house_info_obj.url, house_info_obj.addr)
                 last_hist_price = self.check_latest_price_from_mongodb(house_info_obj.obj_id)
-
+                need_to_fetch = False
                 self.house_obj_list[house_no].community = self.get_comm_name_in_db(house_info_obj.obj_id)
                 self.house_obj_list[house_no].floor = self.get_floor_in_db(house_info_obj.obj_id)
+
+                # when the floor in db is -1, better to let it check the info on website
+                if self.house_obj_list[house_no].floor == -1:
+                    need_to_fetch = True
                 self.house_obj_list[house_no].age = self.get_age_in_db(house_info_obj.obj_id)
                 # this will find out if the house is updated by datetime.now() or not
-                if last_hist_price == house_info_obj.price:
+                if last_hist_price == house_info_obj.price and need_to_fetch == False:
                     print("obj_id {}, price unchanged {}, skip and kill same record".format(house_info_obj.obj_id, house_info_obj.price))
                     # rm the same price in db
                     self.delete_house_by_price_db(house_info_obj.obj_id, last_hist_price)
@@ -101,7 +105,15 @@ class house_agent_web():
                     obj_number = house_info_obj.obj_id
                     house = self.get_web_obj_for_screen_shot(house_info_obj)
 
-                    self.house_obj_list[house_no].community = self.get_house_floor()
+                    self.house_obj_list[house_no].community = self.get_community_name()
+                    self.house_obj_list[house_no].floor = self.get_house_floor()
+
+                    # if the house is close already, then skip
+                    if self.house_obj_list[house_no].community == "close":
+                        print("house %s  is close" % house_info_obj.name)
+                        self.house_obj_list.pop(house_no)
+                        continue
+
                     self.house_obj_list[house_no].age = self.get_house_age()
 
                     screen_shot_path = os.path.join("data", self.agent_name.lower(), self.region, obj_number)
@@ -115,7 +127,7 @@ class house_agent_web():
                     time.sleep(0.5)
                     png_path = os.path.join(screen_shot_path, "{}_house2.png".format(self.date_time_str))
                     house.screenshot(png_path)
-                    time.sleep(3)
+                    time.sleep(1.5)
 
             except Exception as e:
                 print("While screenshot {}", house_info_obj.url)
@@ -163,7 +175,7 @@ class house_agent_web():
         filter = {"house_obj_id":objid, "floor": {"$exists": True}}
         data = list(self.db.find_data(filter))
         if len(data) != 0:
-            return data[0]["floor"]
+            return data[-1]["floor"]
         else:
             return -1
 
@@ -180,6 +192,8 @@ class house_agent_web():
                     "addr":house.addr, "url":house.url, "community":house.community, "date":new_data_date,
                     "age":house.age, "floor":house.floor}
             #if not self.db.check_exist({"date": {"$gte": db_data_date}, "house_obj_id":house.obj_id}):
+            # remove redundant data in db
+            self.delete_house_by_price_db(house.obj_id, house.price)
             self.db.insert_data(data)
 
     def check_latest_price_from_mongodb(self, obj_id):
