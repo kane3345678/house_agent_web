@@ -141,6 +141,8 @@ class yun_ching_web(house_agent_web):
                 else:
                     return 'NULL'
             except Exception as e:
+                if self.check_house_obj_close(self.webdriver.current_url):
+                    return "close"
                 print("get_community_name, exception happen, sleep 2 min ")
                 time.sleep(120)
         return "NULL"
@@ -165,6 +167,10 @@ class yun_ching_web(house_agent_web):
                 time.sleep(120)
         return -1
 
+    def _check_floor_format(self, floor_string):
+        pattern = r"^[Bb]?\d+[~-]?\d+/\d{1,2}樓$"
+        match = re.match(pattern, floor_string)
+        return match is not None
 
     def get_house_floor(self):
         for _ in range(3):
@@ -172,9 +178,18 @@ class yun_ching_web(house_agent_web):
                 WebDriverWait(self.webdriver, 30).until(EC.presence_of_element_located((By.CLASS_NAME, 'm-house-info-wrap')))
                 web_elem = self.webdriver.find_element(By.CLASS_NAME, 'm-house-info-wrap')
                 #'建物 32.43坪\n3房(室)2廳2衛\n41.0年 公寓 3~3/5樓'
-                return web_elem.text.split(" ")[-1]
+                floor = web_elem.text.split(" ")[-1]
+                if self._check_floor_format(floor):
+                    print("house floor = " , floor)
+                    return floor
+                else:
+                    print("Floor format error, floor = {}".format(floor))
+                    import pdb;pdb.set_trace()
+                    return "NULL"
 
             except Exception as e:
+                if self.check_house_obj_close(self.webdriver.current_url):
+                    return "close"
                 print("get_house_floor, exception happen, sleep 2 min ")
                 time.sleep(120)
         return "NULL"

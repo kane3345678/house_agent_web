@@ -112,6 +112,8 @@ class sinyi_web(house_agent_web):
             print(web_elem.text)
             return web_elem.text
         except NoSuchElementException:
+            if self.check_house_obj_close(self.webdriver.current_url):
+                return "close"
             return "NULL"
 
     def get_house_age(self):
@@ -129,6 +131,8 @@ class sinyi_web(house_agent_web):
                 else:
                     return -1
             except Exception as e:
+                if self.check_house_obj_close(self.webdriver.current_url):
+                    return "close"   
                 print("get_community_name, exception happen, sleep 2 min ")
                 time.sleep(120)
         return -1
@@ -141,6 +145,8 @@ class sinyi_web(house_agent_web):
                 return web_elem.text
 
             except Exception as e:
+                if self.check_house_obj_close(self.webdriver.current_url):
+                    return "close"
                 print("get_house_floor, exception happen, sleep 2 min ")
                 time.sleep(120)
         return -1
