@@ -151,12 +151,12 @@ def locate_house_png(house_data):
     and return the latest png file to the caller
     """
     # get current working folder path
-    if "sinyi" in house_data[0]["url"]:
+    if "sinyi" in house_data["url"]:
         folder = os.path.join(os.getcwd(), "data", "sinyi")
     else:
         folder = os.path.join(os.getcwd(), "data", "yunching")
-    possible_folder = c.search_folder(folder, house_data[0]["house_obj_id"])
-    return c.find_latest_png_file(possible_folder)
+    possible_folder = c.search_folder(folder, house_data["house_obj_id"])
+    return "file://" + c.find_latest_png_file(possible_folder)
 
 def find_close_case():
     """
@@ -177,7 +177,6 @@ def find_close_case():
     for i in tqdm(house_obj_list):
         house_data = db.find_data_order_by_date({"house_obj_id":i})
         house_data = list(house_data)
-
         latest_data_date = house_data[0]['date']
         now = datetime.datetime.now()
         diff = now - latest_data_date
@@ -198,14 +197,13 @@ def find_close_case():
                 print("age doesn't exist, please input the age")
 
                 # open png file in browser
-                driver.get(locate_house_png(house_data))
+                driver.get(locate_house_png(house_data[0]))
                 age = float(input())
                 for j in house_data:
                     j["age"] = age
             if house_data[0]["community"] == "NULL" and house_data[0]["age"] < 20:
-
                 # open png file in browser
-                driver.get(locate_house_png(house_data))
+                driver.get(locate_house_png(house_data[0]))
 
                 print(house_data[0])
                 print("community is NULL, please input the community name")
